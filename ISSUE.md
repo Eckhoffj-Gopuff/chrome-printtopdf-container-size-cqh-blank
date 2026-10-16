@@ -28,7 +28,11 @@ On screen both pages are identical, and the `cqh` text is 22.88px (13% of the 17
 - **Regression in old headless and chrome-headless-shell.** `--headless=old` prints correctly on 113.0.5672.63, 116.0.5845.96,
   124.0.6367.207, and 127.0.6533.119. It is blank on 128.0.6613.8 and 128.0.6613.84. chrome-headless-shell (Chrome for Testing)
   prints correctly on 127.0.6533.119 and is blank on 128.0.6613.84. Every later build I ran is blank (129, 130, 133, 153, 156).
-  `BISECT_RESULT_PLACEHOLDER`
+  **Position bisect** (old headless, Chromium snapshot builds, macOS 26 arm64): last good is position 1316017
+  (`57d31eae8e4eca52fc106402dec56d772755221c`), first bad is 1318290 (`e32ab6f1f764b726a16f7220e9fd6c0be9996491`).
+  Changelog: https://chromium.googlesource.com/chromium/src/+log/57d31eae8e4eca52fc106402dec56d772755221c..e32ab6f1f764b726a16f7220e9fd6c0be9996491
+  This is a range of about 2,300 positions, not one commit: snapshot builds in the middle (around 1317170 to 1317188)
+  did not print anything on my machine, even for the control.
 - **New headless is blank** on 124.0.6367.207, 127.0.6533.119, 155.0.8059.84, and on Linux Chromium 133. Builds 113, 116,
   120, and 128 did not run on my machine (they hang or crash, also for the control), so I do not know where new headless
   started.
@@ -61,7 +65,7 @@ Every `Page.printToPDF` variant I tried is blank: default Letter, A4 landscape, 
 ## Not tested
 
 Windows, Linux x86_64, macOS Intel, Chrome beta/dev/canary, Edge, Safari, and printing from the browser UI (Ctrl+P).
-`BISECT_RESULT_PLACEHOLDER_NOT_TESTED`
+The position bisect was run for old headless on macOS only. I did not bisect new headless.
 
 ## Real-world impact
 

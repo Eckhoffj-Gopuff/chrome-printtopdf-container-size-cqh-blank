@@ -64,7 +64,16 @@ change on re-runs with the final file in Chrome 155, Chromium 156, and Chromium 
 
 So in old headless mode and in chrome-headless-shell the bug first appears in Chrome 128. New headless mode is
 blank in the oldest build that runs here (124). Headed Chrome printed correctly on 127, 128, and 155.
-`BISECT_RESULT_PLACEHOLDER`
+
+**Position bisect (old headless, `--headless=old`, macOS 26 arm64, Chromium snapshot builds):** the last build that
+prints correctly is position 1316017 (`57d31eae8e4e`, both files 29,540 bytes). The first build that blanks is
+position 1318290 (`e32ab6f1f764`, `repro.html` 855 bytes, control 29,542). The regression is in this range of about
+2,300 positions:
+https://chromium.googlesource.com/chromium/src/+log/57d31eae8e4eca52fc106402dec56d772755221c..e32ab6f1f764b726a16f7220e9fd6c0be9996491
+
+It is a range, not one commit. Many snapshot builds between the two (for example 1317170 to 1317188 and 1316032
+to 1316043) printed nothing on my machine, even for the control, so the search could not go further here.
+Someone with a machine where those builds run can finish it with `bisect-builds.py` (see `COVERAGE.md`).
 
 ## The whole page is blank, not only the `cqh` text
 

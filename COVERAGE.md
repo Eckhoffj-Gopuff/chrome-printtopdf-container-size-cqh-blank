@@ -17,6 +17,7 @@ blank, the run is **invalid** (a browser or OS problem, not this bug).
 | OS | Linux x86_64 | **open**, CI | |
 | OS | Windows | **open**, CI | |
 | OS | macOS Intel | **open**, CI | |
+| Regression range by position (old headless, Chromium snapshots, macOS arm64) | 1316017 good, 1318290 bad | done, partial | a range of about 2,300 positions. Builds near 1317170 to 1317188 printed nothing here, so it is not one commit. Finish it with `bisect-builds.py` on a machine where they run. |
 | Chrome version, old headless (`--headless=old`) | 113.0.5672.63, 116.0.5845.96, 124.0.6367.207, 127.0.6533.119 | done | prints correctly |
 | Chrome version, old headless (`--headless=old`) | 128.0.6613.8, 128.0.6613.84 | done | BLANK |
 | Chrome version, chrome-headless-shell (Chrome for Testing) | 127.0.6533.119 | done | prints correctly (29,542 bytes, same as the control) |
@@ -128,3 +129,21 @@ needed if the report should say "Firefox is not affected" for those systems.
 - The results table in `README.md` and the "Additional information" in `ISSUE.md` use only these rows.
 - The regression window in `ISSUE.md` is the narrowest one in the version rows.
 - Attachments for the tracker: `repro.html`, `repro-control.html`, and the PDFs in `results/`.
+
+## 5. Finishing the position bisect
+
+The old-headless regression is narrowed to Chromium main positions 1316017 (last good) to 1318290 (first bad):
+https://chromium.googlesource.com/chromium/src/+log/57d31eae8e4eca52fc106402dec56d772755221c..e32ab6f1f764b726a16f7220e9fd6c0be9996491
+
+My search stopped there because snapshot builds around 1317170 to 1317188 printed nothing on macOS 26 arm64
+(even for the control). To finish:
+
+1. Use a machine where those builds run, or another OS. Chromium's `tools/bisect-builds.py` (in the Chromium
+   source tree) downloads snapshot builds for a position range and asks whether each one is good or bad.
+2. The test for each build is: run it with `--headless=old --no-pdf-header-footer --print-to-pdf=out.pdf file:///path/to/repro.html`
+   and run `pdftotext out.pdf -`. Empty output is bad. Text present is good. Check `repro-control.html` first, so
+   a build that cannot print at all is not counted as bad.
+3. Replace the range in `README.md` and `ISSUE.md` with the commit that the tool reports.
+
+The script I used, which tries neighbouring snapshots when one does not run, is the logic described in step 2
+applied to the snapshot bucket listing. It was run from outside this repo and is not included.
