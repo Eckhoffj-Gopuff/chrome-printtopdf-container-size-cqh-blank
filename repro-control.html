@@ -1,0 +1,19 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Page.printToPDF prints a blank page: container-type:size + cqh in an absolutely positioned flex chain</title>
+<style>
+  .container { container-type: size; height: 100%; }  /* remove container-type and the PDF has text */
+  .text { font-size: 22.88px; }                       /* same size as repro.html, but no cqh unit */
+</style>
+
+<div style="position: relative">
+  <div style="position: absolute; width: 477px; height: 176px">
+    <div style="display: flex; flex-direction: column; height: 100%">
+      <div style="flex-grow: 1">
+        <div class="container">
+          <div class="text">10.3.0</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
