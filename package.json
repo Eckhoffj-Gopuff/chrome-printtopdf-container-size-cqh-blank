@@ -5,7 +5,8 @@
   "description": "Chrome Page.printToPDF prints a blank page when a descendant uses cqh inside container-type: size",
   "scripts": {
     "repro": "node print.cjs repro.html",
-    "control": "node print.cjs repro-control.html"
+    "control": "node print.cjs repro-control.html",
+    "probe": "node probe-render-paths.cjs"
   },
   "dependencies": {
     "playwright": "^1.50.0"
