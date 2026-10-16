@@ -84,8 +84,8 @@ const pdfBase64 = await driver.printPage({ background: true, shrinkToFit: false,
 
 ### Windows, Linux x86_64, macOS Intel, and the Chrome channels (CI)
 
-`.github/workflows/matrix.yml` runs `ci-run.cjs` on `ubuntu-latest`, `windows-latest`, `macos-latest`, and
-`macos-13`, for `chromium` (the headless shell) and the `chrome`, `chrome-beta`, and `chrome-dev` channels.
+`.github/workflows/matrix.yml` runs `ci-run.cjs` on `ubuntu-latest`, `windows-latest`, `macos-latest` (arm64), and
+`macos-15-intel`, for `chromium` (the headless shell) and the `chrome`, `chrome-beta`, and `chrome-dev` channels.
 It is `workflow_dispatch` only. Steps:
 
 1. Push the repo (the workflow file is already in it).

@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-15-intel]
         # "chromium" is Playwright's headless shell (old headless implementation).
         # The Chrome channels run in new headless mode.
         target: [chromium, chrome, chrome-beta, chrome-dev]
