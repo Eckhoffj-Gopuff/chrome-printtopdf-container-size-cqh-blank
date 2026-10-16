@@ -8,6 +8,22 @@ Pass criteria for one run: `repro.html` prints less than 3,000 bytes with no tex
 (**BLANK**), and `repro-control.html` prints more than 3,000 bytes with all text. If the control is also
 blank, the run is **invalid** (a browser or OS problem, not this bug).
 
+### Controls: why a blank result can be trusted
+
+A blank result only counts if the setup is shown to work. Each CI run has three controls:
+
+| Control | What it rules out | Where |
+|---|---|---|
+| `repro-control.html` in the same browser | the browser or OS cannot print at all | every run (the `control` column) |
+| An empty page in the same browser | the 3,000-byte threshold is wrong for this runner (an empty page prints about 750 to 1,000 bytes, about the same as the blank repro) | every run (the `empty` column); a run is INVALID if the empty page is over the threshold |
+| A **known-good build**: Chrome for Testing 127.0.6533.119 headless shell, the last build before the Chrome 128 regression | the setup, the runner, or the file loading breaks `repro.html` for any Chrome | the `known-good` target on every OS |
+
+The known-good row must say `prints` with `repro` and `control` about equal. If it says `BLANK` on a runner, treat every
+row for that OS as no data. Local result on macOS arm64: `repro=15559 control=15559 empty=751 | prints`.
+
+The first CI run (actions/runs/38961106399) had the first control only. The known-good target and the empty-page
+check were added afterwards and **have not run on CI yet**.
+
 ## 1. Matrix
 
 | Dimension | Value | Status | Result |

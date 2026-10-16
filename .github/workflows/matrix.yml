@@ -2,6 +2,11 @@ name: print-to-pdf matrix
 
 # Runs the repro on each operating system and each Chrome channel. Read the job summary for the table.
 # Trigger it by hand from the Actions tab (workflow_dispatch). It does not run on push.
+#
+# Each row has three measurements: the repro, the control (same page, fixed font size), and an empty page.
+# The "known-good" target is Chrome for Testing 127.0.6533.119 headless shell. It printed repro.html correctly
+# in local runs (127.0.6533.119 is the last build before the Chrome 128 regression). If it is BLANK on a runner,
+# that runner's setup is wrong and the other rows on that OS are not trustworthy.
 on:
   workflow_dispatch:
 
@@ -14,19 +19,33 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest, macos-15-intel]
         # "chromium" is Playwright's headless shell (old headless implementation).
         # The Chrome channels run in new headless mode.
-        target: [chromium, chrome, chrome-beta, chrome-dev]
+        # "known-good" is the control build described above.
+        target: [chromium, chrome, chrome-beta, chrome-dev, known-good]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - run: npm install
-      - name: Install browser
+      - name: Install browser (Playwright)
+        if: matrix.target != 'known-good'
         run: npx playwright install --with-deps ${{ matrix.target }}
         continue-on-error: true
-      - name: Print the repro and the control
+      - name: Install the known-good build (Chrome for Testing 127.0.6533.119 headless shell)
+        if: matrix.target == 'known-good'
         shell: bash
         run: |
-          echo "| OS | target | version | repro bytes | control bytes | result |" >> "$GITHUB_STEP_SUMMARY"
-          echo "|---|---|---|---|---|---|" >> "$GITHUB_STEP_SUMMARY"
-          node ci-run.cjs "${{ matrix.target }}" "${{ matrix.target }}"
+          out="$(npx --yes @puppeteer/browsers install chrome-headless-shell@127.0.6533.119 --path "$RUNNER_TEMP/cft")"
+          echo "$out"
+          echo "EXECUTABLE_PATH=$(echo "$out" | tail -n 1 | sed 's/^[^ ]* //')" >> "$GITHUB_ENV"
+        continue-on-error: true
+      - name: Print the repro, the control, and an empty page
+        shell: bash
+        run: |
+          echo "| OS | target | version | repro bytes | control bytes | empty bytes | result |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|---|---|---|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ matrix.target }}" = "known-good" ]; then
+            node ci-run.cjs path known-good-127
+          else
+            node ci-run.cjs "${{ matrix.target }}" "${{ matrix.target }}"
+          fi
