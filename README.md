@@ -1,8 +1,11 @@
-# Chrome prints a blank PDF: `cqh` inside `container-type: size`
+# Headless Chrome prints a blank PDF: `cqh` inside `container-type: size`
 
-`Page.printToPDF` returns a PDF with no content at all for `repro.html`: no text, no background colors, and no
-unrelated elements. The page renders correctly on screen and in screenshots.
+In **headless** Chrome, `Page.printToPDF` returns a PDF with no content at all for `repro.html`: no text,
+no background colors, and no unrelated elements. The page renders correctly on screen and in screenshots.
+**Headed** Chrome prints the same file correctly, and so does Firefox.
 `repro-control.html` is the same page with a fixed font size instead of `13cqh`. It prints correctly.
+
+`COVERAGE.md` lists every case that was tested, every case that was not, and how to run the rest.
 
 ## Reproduce
 
@@ -30,16 +33,38 @@ npm run repro      # screen: font-size 22.88px ... BLANK
 npm run control    # screen: font-size 22.88px ... has content
 ```
 
-## Results (run 2026-10-16, macOS, arm64; the Playwright runs are 3 runs each, identical every run)
+Files in `results/`: the blank and the correct PDFs from Chrome 155, the correct PDFs from Firefox 138, and a
+screenshot of the page as Chrome shows it.
 
-| Browser | `repro.html` | `repro-control.html` |
+## Results (2026-10-16; the Playwright runs are 3 runs each, identical every run)
+
+| Browser | OS | `repro.html` | `repro-control.html` |
+|---|---|---|---|
+| Google Chrome 155.0.8059.84, new headless, CLI `--print-to-pdf` | macOS 26, arm64 | 968 bytes, no text | 16,891 bytes, all text present |
+| Google Chrome 155.0.8059.84, new headless, Playwright `page.pdf` | macOS 26, arm64 | 960 bytes | 15,654 bytes |
+| Chromium headless shell 156.0.8078.4, Playwright `page.pdf` | macOS 26, arm64 | 839 bytes | 15,533 bytes |
+| Chromium headless shell 133.0.6943.16, Playwright `page.pdf` | Ubuntu 24.04, arm64 (Docker) | 856 bytes | 8,983 bytes |
+| **Google Chrome 155.0.8059.84, headed, raw DevTools `Page.printToPDF`** | macOS 26, arm64 | **16,886 bytes, all text** | 16,886 bytes |
+| Firefox 138.0.1, WebDriver `printPage` | macOS 26, arm64 | 12,624 bytes, all text | 12,625 bytes |
+
+The same Chrome 155 build, file, and script give 16,886 bytes headed and 974 bytes headless. Disabling the GPU
+makes no difference (the CLI with and without `--disable-gpu` is blank).
+
+## When it started
+
+Measured with the `Page.printToPDF` command line on macOS 26 arm64. The page text was shorter in the earlier
+runs than in the final `repro.html`; the unrelated text was moved only to stop overlaps, and the result did not
+change on re-runs with the final file in Chrome 155, Chromium 156, and Chromium 133.
+
+| Build | Old headless / headless shell | New headless |
 |---|---|---|
-| Google Chrome 155.0.8059.84 (CLI `--print-to-pdf`) | 968 bytes, no text | 16,889 bytes, all text present |
-| Google Chrome 155.0.8059.84 (Playwright `page.pdf`) | 960 bytes | 15,653 bytes |
-| Chromium headless shell 156.0.8078.4 (Playwright `page.pdf`) | 839 bytes | 15,532 bytes |
+| Chrome 113.0.5672.63, 116.0.5845.96, 124.0.6367.207, 127.0.6533.119 | **prints correctly** | 124 and 127 blank; 113 and 116 did not run here |
+| Chrome 128.0.6613.8, 128.0.6613.84 | **blank** | did not run here (the build hangs, also for the control) |
+| Chromium 129 to 156 | **blank** | blank (155, and Linux 133) |
 
-Chromium headless shell 153.0.8010.12 also produced the blank (839 bytes) with an earlier version of this page that
-did not have the unrelated content. I did not re-run 153 on the current files.
+So in old headless mode and in chrome-headless-shell the bug first appears in Chrome 128. New headless mode is
+blank in the oldest build that runs here (124). Headed Chrome printed correctly on 127, 128, and 155.
+`BISECT_RESULT_PLACEHOLDER`
 
 ## The whole page is blank, not only the `cqh` text
 
@@ -56,12 +81,12 @@ From `probe-render-paths.cjs` (needs `pdftotext` and `pdftoppm`). Same result in
 |---|---|---|
 | `page.pdf` 583x350 px, Letter, A4 landscape, `scale: 0.5`, `printBackground: false`, `preferCSSPageSize` with `@page`, `tagged` + `outline` | blank (0 non-white pixels) | content |
 | Raw CDP `Page.printToPDF` with `transferMode: ReturnAsStream` | blank | content |
-| `page.screenshot()` | correct, 7,151 non-white pixels | identical |
+| `page.screenshot()` | correct | identical |
 | `page.screenshot({ fullPage: true })` | correct | identical |
 | `emulateMedia({ media: 'print' })` then `page.screenshot()` | correct | identical |
 
 The print-media screenshot matches the screen screenshot pixel for pixel. Switching to print CSS does not cause the
-blank. Only the PDF output path does. The font size under print media emulation is still `22.88px`.
+blank. Only the headless PDF output path does. The font size under print media emulation is still `22.88px`.
 
 ## What triggers it
 
@@ -89,16 +114,17 @@ whether other ways of getting a definite height also trigger it.
 
 ## Not tested
 
-- Firefox and Safari.
-- Printing from the browser UI (`window.print()` or the print dialog). Only `Page.printToPDF` was tested.
-- `Page.captureSnapshot` (MHTML). It does not render, so it would not show this.
-- Other Chrome versions and operating systems.
+See `COVERAGE.md` for the full list and the steps. At the time of writing:
+
+- Windows, Linux x86_64, macOS Intel, Chrome beta/dev/canary, and Edge (needs the CI workflow in this repo).
+- Printing from the browser UI (Ctrl/Cmd+P). Headed `Page.printToPDF` is not affected.
+- Safari and other WebKit browsers.
 - Why it happens. This is a report of the behavior, not a diagnosis.
 
 ## Origin
 
 A dashboard app uses `container-type: size` with `font-size: clamp(18px, min(11cqw, 13cqh), 92px)` on a KPI
-tile. Its grid items are absolutely positioned. PDF exports of dashboards with that tile came out blank, including
+tile. Its grid items are absolutely positioned. PDF exports from a headless Chrome came out blank, including
 the other tiles on the page. `repro.html` came from an automated reduction of the real page (about 200 KB of DOM and
-CSS down to 15 elements), then a hand reduction. The app now avoids the problem by computing the font size in
-JavaScript for PDF exports.
+CSS down to 15 elements), then a hand reduction. The app now avoids the problem by not using `cqh` or
+`container-type: size` for that tile.

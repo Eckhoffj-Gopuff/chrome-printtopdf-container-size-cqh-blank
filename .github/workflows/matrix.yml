@@ -1,0 +1,32 @@
+name: print-to-pdf matrix
+
+# Runs the repro on each operating system and each Chrome channel. Read the job summary for the table.
+# Trigger it by hand from the Actions tab (workflow_dispatch). It does not run on push.
+on:
+  workflow_dispatch:
+
+jobs:
+  matrix:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
+        # "chromium" is Playwright's headless shell (old headless implementation).
+        # The Chrome channels run in new headless mode.
+        target: [chromium, chrome, chrome-beta, chrome-dev]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - name: Install browser
+        run: npx playwright install --with-deps ${{ matrix.target }}
+        continue-on-error: true
+      - name: Print the repro and the control
+        shell: bash
+        run: |
+          echo "| OS | target | version | repro bytes | control bytes | result |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|---|---|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          node ci-run.cjs "${{ matrix.target }}" "${{ matrix.target }}"

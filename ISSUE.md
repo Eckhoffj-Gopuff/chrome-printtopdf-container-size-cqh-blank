@@ -1,31 +1,76 @@
 # Draft Chromium bug report (not filed)
 
-File at https://issues.chromium.org (component suggestion: Blink>Layout or Blink>Paint>Print; the reporter should choose).
+File at https://issues.chromium.org. Component suggestion: Blink>Layout or Blink>Paint, with Headless or
+Printing if the form offers it. The reporter should choose. Do not file until `COVERAGE.md` has no open row
+that the text below depends on.
 
-**Title:** Page.printToPDF prints an entirely blank page when a descendant uses `cqh` inside `container-type: size` (absolutely positioned, flex chain)
+**Title:** Headless: Page.printToPDF prints an entirely blank page when a descendant uses `cqh` inside `container-type: size` under an absolutely positioned box
 
-**What steps will reproduce the problem?**
+## Steps to reproduce
 
-1. Save `repro.html` and `repro-control.html` from this repository.
-2. Run `chrome --headless --no-pdf-header-footer --print-to-pdf=out.pdf file:///path/to/repro.html`.
-3. Run `pdftotext out.pdf -`, and render the page (for example `pdftoppm -r 50 out.pdf out`).
-4. Repeat with `repro-control.html`.
+1. Download `repro.html` and `repro-control.html` from https://github.com/Eckhoffj-Gopuff/chrome-printtopdf-container-size-cqh-blank
+2. `chrome --headless --no-pdf-header-footer --print-to-pdf=out.pdf file:///path/to/repro.html`
+3. `pdftotext out.pdf -` (or open `out.pdf`).
+4. Repeat with `repro-control.html`. It differs only by `font-size: 22.88px` in place of `font-size: 13cqh`.
 
-**What is the expected result?**
+## Expected
 
-`out.pdf` contains `10.3.0` at 22.88px (as on screen), the unrelated paragraph, the red box, and the second unrelated paragraph.
+`out.pdf` contains `10.3.0`, `UNRELATED-INFLOW-TEXT`, a red box, and `UNRELATED-ABS-TEXT`, as the page shows on screen.
 
-**What happens instead?**
+## Actual
 
-`repro.html` produces a PDF of about 970 bytes. It has no extractable text and no non-white pixels: the unrelated text and the red box are missing too, not only the `cqh` text. `repro-control.html` differs only by `font-size: 22.88px` in place of `font-size: 13cqh`. It produces a PDF of about 17 KB with everything present. On screen both pages are identical.
+`repro.html` produces a PDF of about 970 bytes with no extractable text and no non-white pixels. The unrelated text and
+the red box are missing too, not only the `cqh` text. `repro-control.html` produces about 17 KB with everything present.
+On screen both pages are identical, and the `cqh` text is 22.88px (13% of the 176px container).
 
-**Additional information**
+## Is it a regression? Does it work in other cases?
 
-- Same result in Google Chrome 155.0.8059.84 (CLI `--print-to-pdf` and Playwright `page.pdf`) and Chromium headless shell 156.0.8078.4, macOS arm64. Chromium 153.0.8010.12 also blanked an earlier, smaller version of the page.
-- Every `Page.printToPDF` variant tried is blank: default Letter, A4 landscape, custom size, `scale`, `printBackground: false`, `preferCSSPageSize` with `@page`, tagged PDF, and `transferMode: ReturnAsStream`.
-- Screenshots are correct: `Page.captureScreenshot`, full page, and with `Emulation.setEmulatedMedia` set to print. The print-media screenshot is identical to the screen screenshot, so print CSS alone does not cause it.
-- Changing `cqh` to `cqb` or `cqmin` also blanks the PDF. Changing it to `cqw` does not.
+- **Regression in old headless and chrome-headless-shell.** `--headless=old` prints correctly on 113.0.5672.63, 116.0.5845.96,
+  124.0.6367.207, and 127.0.6533.119. It is blank on 128.0.6613.8 and 128.0.6613.84. chrome-headless-shell (Chrome for Testing)
+  prints correctly on 127.0.6533.119 and is blank on 128.0.6613.84. Every later build I ran is blank (129, 130, 133, 153, 156).
+  `BISECT_RESULT_PLACEHOLDER`
+- **New headless is blank** on 124.0.6367.207, 127.0.6533.119, 155.0.8059.84, and on Linux Chromium 133. Builds 113, 116,
+  120, and 128 did not run on my machine (they hang or crash, also for the control), so I do not know where new headless
+  started.
+- **Headed Chrome is NOT affected.** The same Chrome 155.0.8059.84 build, file, and Playwright script, with a DevTools
+  `Page.printToPDF`: 16,886 bytes with all text headed, 974 bytes headless. Headed Chrome for Testing 127.0.6533.119 and
+  128.0.6613.84 also print correctly.
+- **Firefox 138.0.1** (macOS, WebDriver `printPage`) is not affected: all text printed.
+- **Other Chrome capture paths are correct:** `Page.captureScreenshot` (viewport and full page) and a screenshot with
+  `Emulation.setEmulatedMedia` set to print. The print-media screenshot is identical to the screen screenshot, so print CSS
+  alone does not cause it.
+
+## What triggers it (changing one thing at a time)
+
+- `cqh` inside `container-type: size` is blank. A fixed font size with the same `container-type: size` prints.
+  `cqw` prints. `cqb` and `cqmin` are blank. `container-type: inline-size` and `contain: size` print.
 - Removing the `position: relative` ancestor, or removing `position: absolute` from the box, makes the content print.
-- Not tested: Firefox, Safari, printing from the browser UI, other Chrome versions or operating systems.
-- Real-world impact: a dashboard KPI tile using `font-size: clamp(18px, min(11cqw, 13cqh), 92px)` inside `container-type: size` made every PDF export of that dashboard blank, including the other tiles.
-- This is a report of the behavior. I do not know the cause.
+- The box height does not matter (100px and 400px are still blank).
+
+## Environment
+
+| Browser | OS | repro.html | repro-control.html |
+|---|---|---|---|
+| Google Chrome 155.0.8059.84, new headless, CLI | macOS 26, arm64 | 968 bytes | 16,891 bytes |
+| Chromium headless shell 156.0.8078.4 | macOS 26, arm64 | 839 bytes | 15,533 bytes |
+| Chromium 133.0.6943.16 (headless shell and new headless) | Ubuntu 24.04, arm64 | 856 and 961 bytes | about 9 KB |
+
+Every `Page.printToPDF` variant I tried is blank: default Letter, A4 landscape, custom size, `scale`, `printBackground:false`,
+`preferCSSPageSize` with `@page`, tagged PDF with outline, and `transferMode: ReturnAsStream`. `--disable-gpu` makes no difference.
+
+## Not tested
+
+Windows, Linux x86_64, macOS Intel, Chrome beta/dev/canary, Edge, Safari, and printing from the browser UI (Ctrl+P).
+`BISECT_RESULT_PLACEHOLDER_NOT_TESTED`
+
+## Real-world impact
+
+A dashboard KPI tile using `font-size: clamp(18px, min(11cqw, 13cqh), 92px)` inside `container-type: size` made every
+PDF export from a headless Chrome blank, including the other tiles on the page. PNG screenshots of the same page were
+correct. This is a report of the behavior. I do not know the cause.
+
+## Attachments
+
+`repro.html`, `repro-control.html`, `results/repro.chrome-155-new-headless.pdf` (blank),
+`results/repro-control.chrome-155-new-headless.pdf` (correct), `results/repro.screen-chrome-155.png`
+(how Chrome renders it on screen).
