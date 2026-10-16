@@ -58,13 +58,20 @@ On screen both pages are identical, and the `cqh` text is 22.88px (13% of the 17
 | Google Chrome 155.0.8059.84, new headless, CLI | macOS 26, arm64 | 968 bytes | 16,891 bytes |
 | Chromium headless shell 156.0.8078.4 | macOS 26, arm64 | 839 bytes | 15,533 bytes |
 | Chromium 133.0.6943.16 (headless shell and new headless) | Ubuntu 24.04, arm64 | 856 and 961 bytes | about 9 KB |
+| Google Chrome 155.0.8059.84/85, Chrome beta 157.0.8103.6, Chromium 156.0.8078.4 (GitHub Actions, headless) | Ubuntu x64 | 944 / 944 / 839 bytes | 9,072 / 9,072 / 8,967 bytes |
+| same three builds (GitHub Actions, headless) | Windows 10.0.26100 x64 | 954 / 954 / 839 bytes | 20,741 / 20,743 / 20,626 bytes |
+| same three builds (GitHub Actions, headless) | macOS 15 x64 (Intel) and macOS arm64 | 960 / 960 / 839 bytes | 15,654 / 15,656 / 15,533 bytes |
+
+The GitHub Actions run, with the job table, is public:
+https://github.com/Eckhoffj-Gopuff/chrome-printtopdf-container-size-cqh-blank/actions/runs/38961106399
 
 Every `Page.printToPDF` variant I tried is blank: default Letter, A4 landscape, custom size, `scale`, `printBackground:false`,
 `preferCSSPageSize` with `@page`, tagged PDF with outline, and `transferMode: ReturnAsStream`. `--disable-gpu` makes no difference.
 
 ## Not tested
 
-Windows, Linux x86_64, macOS Intel, Chrome beta/dev/canary, Edge, Safari, and printing from the browser UI (Ctrl+P).
+Chrome dev and canary, Edge, Safari, and printing from the browser UI (Ctrl+P). The Windows, Linux, and macOS
+runs above were headless only. Headed Chrome was tested only on macOS.
 The position bisect was run for old headless on macOS only. I did not bisect new headless.
 
 ## Real-world impact

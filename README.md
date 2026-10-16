@@ -44,6 +44,12 @@ screenshot of the page as Chrome shows it.
 | Google Chrome 155.0.8059.84, new headless, Playwright `page.pdf` | macOS 26, arm64 | 960 bytes | 15,654 bytes |
 | Chromium headless shell 156.0.8078.4, Playwright `page.pdf` | macOS 26, arm64 | 839 bytes | 15,533 bytes |
 | Chromium headless shell 133.0.6943.16, Playwright `page.pdf` | Ubuntu 24.04, arm64 (Docker) | 856 bytes | 8,983 bytes |
+| Google Chrome 155.0.8059.85, Playwright `page.pdf` (GitHub Actions) | Ubuntu (kernel 6.17), x64 | 944 bytes | 9,072 bytes |
+| Google Chrome beta 157.0.8103.6, Playwright `page.pdf` (GitHub Actions) | Ubuntu (kernel 6.17), x64 | 944 bytes | 9,072 bytes |
+| Chromium headless shell 156.0.8078.4, Playwright `page.pdf` (GitHub Actions) | Ubuntu (kernel 6.17), x64 | 839 bytes | 8,967 bytes |
+| Google Chrome 155.0.8059.85, Chrome beta 157.0.8103.6, Chromium 156.0.8078.4 (GitHub Actions) | Windows 10.0.26100, x64 | 954 / 954 / 839 bytes | 20,741 / 20,743 / 20,626 bytes |
+| Google Chrome 155.0.8059.85, Chrome beta 157.0.8103.6, Chromium 156.0.8078.4 (GitHub Actions) | macOS 15, x64 (Intel) | 960 / 960 / 839 bytes | 15,654 / 15,656 / 15,533 bytes |
+| Google Chrome 155.0.8059.85, Chrome beta 157.0.8103.6, Chromium 156.0.8078.4 (GitHub Actions) | macOS, arm64 | 960 / 960 / 839 bytes | 15,654 / 15,656 / 15,533 bytes |
 | **Google Chrome 155.0.8059.84, headed, raw DevTools `Page.printToPDF`** | macOS 26, arm64 | **16,886 bytes, all text** | 16,886 bytes |
 | Firefox 138.0.1, WebDriver `printPage` | macOS 26, arm64 | 12,624 bytes, all text | 12,625 bytes |
 
@@ -125,7 +131,9 @@ whether other ways of getting a definite height also trigger it.
 
 See `COVERAGE.md` for the full list and the steps. At the time of writing:
 
-- Windows, Linux x86_64, macOS Intel, Chrome beta/dev/canary, and Edge (needs the CI workflow in this repo).
+- Chrome dev and canary channels (the dev install did not work on any CI runner), and Microsoft Edge.
+- Windows, Linux, and macOS were tested only in headless mode, only with the Playwright `chrome`, `chrome-beta`, and
+  `chromium` targets. Headed Chrome was tested only on macOS.
 - Printing from the browser UI (Ctrl/Cmd+P). Headed `Page.printToPDF` is not affected.
 - Safari and other WebKit browsers.
 - Why it happens. This is a report of the behavior, not a diagnosis.

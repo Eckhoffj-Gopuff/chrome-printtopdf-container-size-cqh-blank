@@ -14,9 +14,10 @@ blank, the run is **invalid** (a browser or OS problem, not this bug).
 |---|---|---|---|
 | OS | macOS 26 (Darwin 25.6), arm64 | done | BLANK |
 | OS | Linux Ubuntu 24.04, arm64 (Docker) | done | BLANK (Chromium 133, both headless modes) |
-| OS | Linux x86_64 | **open**, CI | |
-| OS | Windows | **open**, CI | |
-| OS | macOS Intel | **open**, CI | |
+| OS | Linux x86_64 (GitHub `ubuntu-latest`, kernel 6.17 azure) | done, CI | BLANK: Chrome 155.0.8059.84, Chrome beta 157.0.8103.6, Chromium 156.0.8078.4 (944, 944, 839 bytes; controls 9,072, 9,072, 8,967) |
+| OS | Windows (GitHub `windows-latest`, 10.0.26100) x64 | done, CI | BLANK: Chrome 155.0.8059.85, Chrome beta 157.0.8103.6, Chromium 156.0.8078.4 (954, 954, 839 bytes; controls 20,741, 20,743, 20,626) |
+| OS | macOS Intel (GitHub `macos-15-intel`, Darwin 24.6) x64 | done, CI | BLANK: Chrome 155.0.8059.85, Chrome beta 157.0.8103.6, Chromium 156.0.8078.4 (960, 960, 839 bytes; controls 15,654, 15,656, 15,533) |
+| OS | macOS Apple silicon (GitHub `macos-latest`, Darwin 25.6) arm64 | done, CI | BLANK on the same three browsers, same sizes as macOS Intel |
 | Regression range by position (old headless, Chromium snapshots, macOS arm64) | 1316017 good, 1318290 bad | done, partial | a range of about 2,300 positions. Builds near 1317170 to 1317188 printed nothing here, so it is not one commit. Finish it with `bisect-builds.py` on a machine where they run. |
 | Chrome version, old headless (`--headless=old`) | 113.0.5672.63, 116.0.5845.96, 124.0.6367.207, 127.0.6533.119 | done | prints correctly |
 | Chrome version, old headless (`--headless=old`) | 128.0.6613.8, 128.0.6613.84 | done | BLANK |
@@ -29,8 +30,10 @@ blank, the run is **invalid** (a browser or OS problem, not this bug).
 | Headless mode | old (`--headless=old`, chrome-headless-shell) and new | done | see the version rows |
 | **Headed** Chrome (a visible window), raw DevTools `Page.printToPDF` | 127.0.6533.119, 128.0.6613.84, 155.0.8059.84 | done | **NOT affected**: 17,480 / 17,480 / 16,886 bytes, all text present. The same Chrome 155 build, file and script blank when headless. |
 | GPU | `--disable-gpu` and without it (Chrome 155, new headless) | done | BLANK both ways |
-| Chrome channel | stable | done (155) | BLANK |
-| Chrome channel | beta, dev, canary | **open**, CI | |
+| Chrome channel | stable (155) | done | BLANK on Linux, Windows, and both Macs |
+| Chrome channel | beta (157.0.8103.6) | done, CI | BLANK on Linux, Windows, and both Macs |
+| Chrome channel | dev | no data | `npx playwright install chrome-dev` did not give a usable binary on any of the four runners (launch error: distribution not found). Not a pass. |
+| Chrome channel | canary | **open** | not in the workflow |
 | Microsoft Edge | stable | **open**, CI | |
 | `Page.printToPDF` options | Letter, A4 landscape, custom size, `scale`, `printBackground:false`, `preferCSSPageSize`, tagged + outline, `ReturnAsStream` | done | all 8 BLANK |
 | Other capture paths | `captureScreenshot` (viewport, full page), print-media emulation + screenshot | done | correct, identical to the control |
