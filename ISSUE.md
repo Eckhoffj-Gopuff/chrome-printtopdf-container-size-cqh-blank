@@ -25,9 +25,17 @@ On screen both pages are identical, and the `cqh` text is 22.88px (13% of the 17
 
 ## Is it a regression? Does it work in other cases?
 
-- **Regression in old headless and chrome-headless-shell.** `--headless=old` prints correctly on 113.0.5672.63, 116.0.5845.96,
-  124.0.6367.207, and 127.0.6533.119. It is blank on 128.0.6613.8 and 128.0.6613.84. chrome-headless-shell (Chrome for Testing)
-  prints correctly on 127.0.6533.119 and is blank on 128.0.6613.84. Every later build I ran is blank (129, 130, 133, 153, 156).
+- **Linux (Docker, Ubuntu 22.04, arm64; Playwright's bundled Chromium, `page.pdf`): regression between 107 and 108.**
+  Chromium 107.0.5304.18 prints correctly (11,765 bytes; control 11,779). Chromium 108.0.5359.29 is blank (671 bytes;
+  control 11,767), and so is every later build I ran: 109, 110, 114, 117, 120, 123, 125, 127.0.6533.17, 128.0.6613.18, 133.0.6943.16.
+- **The window depends on the machine.** Chrome for Testing 127.0.6533.119 headless shell prints correctly on my physical Mac
+  but is blank on GitHub-hosted Linux, Windows, macOS Intel, and macOS arm64 runners (847 bytes each; the controls print).
+  I do not know why. These did not change the result: CPU count, timing, viewport, device scale factor, locale, fonts, and
+  GPU-related flags. The Mac boundary below applies to one physical machine and may not apply elsewhere.
+- **macOS 26 arm64, physical machine: regression in old headless and chrome-headless-shell between 127 and 128.**
+  `--headless=old` prints correctly on 113.0.5672.63, 116.0.5845.96, 124.0.6367.207, and 127.0.6533.119. It is blank on
+  128.0.6613.8 and 128.0.6613.84. chrome-headless-shell (Chrome for Testing) prints correctly on 127.0.6533.119 and is blank on
+  128.0.6613.84. Every later build I ran is blank (129, 130, 133, 153, 156). Chromium 107 and 108 (Playwright) also print there.
   **Position bisect** (old headless, Chromium snapshot builds, macOS 26 arm64): last good is position 1316017
   (`57d31eae8e4eca52fc106402dec56d772755221c`), first bad is 1318290 (`e32ab6f1f764b726a16f7220e9fd6c0be9996491`).
   Changelog: https://chromium.googlesource.com/chromium/src/+log/57d31eae8e4eca52fc106402dec56d772755221c..e32ab6f1f764b726a16f7220e9fd6c0be9996491

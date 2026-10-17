@@ -1,12 +1,18 @@
 name: print-to-pdf matrix
 
-# Runs the repro on each operating system and each Chrome channel. Read the job summary for the table.
+# Runs the repro on each operating system and each Chrome build. Read the job summary for the table.
 # Trigger it by hand from the Actions tab (workflow_dispatch). It does not run on push.
 #
 # Each row has three measurements: the repro, the control (same page, fixed font size), and an empty page.
-# The "known-good" target is Chrome for Testing 127.0.6533.119 headless shell. It printed repro.html correctly
-# in local runs (127.0.6533.119 is the last build before the Chrome 128 regression). If it is BLANK on a runner,
-# that runner's setup is wrong and the other rows on that OS are not trustworthy.
+#
+# Targets:
+#   chromium, chrome, chrome-beta, chrome-dev   current builds (Playwright's latest, and the Chrome channels)
+#   cft-127     Chrome for Testing 127.0.6533.119 headless shell. It prints the repro on a developer Mac but
+#               was BLANK on all four CI runners, so it is a data point and not a control.
+#   pw-107      Chromium 107.0.5304.18 (Playwright 1.27.1). KNOWN-GOOD CONTROL: it printed the repro in a Linux
+#               container. If it is BLANK on a runner, that runner's setup is wrong and the other rows on that
+#               OS are not trustworthy.
+#   pw-108      Chromium 108.0.5359.29 (Playwright 1.28.1). The first build that was blank in the Linux container.
 on:
   workflow_dispatch:
 
@@ -17,10 +23,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest, macos-15-intel]
-        # "chromium" is Playwright's headless shell (old headless implementation).
-        # The Chrome channels run in new headless mode.
-        # "known-good" is the control build described above.
-        target: [chromium, chrome, chrome-beta, chrome-dev, known-good]
+        target: [chromium, chrome, chrome-beta, chrome-dev, cft-127, pw-107, pw-108]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -28,24 +31,36 @@ jobs:
           node-version: 22
       - run: npm install
       - name: Install browser (Playwright)
-        if: matrix.target != 'known-good'
+        if: contains(fromJSON('["chromium","chrome","chrome-beta","chrome-dev"]'), matrix.target)
         run: npx playwright install --with-deps ${{ matrix.target }}
         continue-on-error: true
-      - name: Install the known-good build (Chrome for Testing 127.0.6533.119 headless shell)
-        if: matrix.target == 'known-good'
+      - name: Install Chrome for Testing 127.0.6533.119 headless shell
+        if: matrix.target == 'cft-127'
         shell: bash
         run: |
           out="$(npx --yes @puppeteer/browsers install chrome-headless-shell@127.0.6533.119 --path "$RUNNER_TEMP/cft")"
           echo "$out"
           echo "EXECUTABLE_PATH=$(echo "$out" | tail -n 1 | sed 's/^[^ ]* //')" >> "$GITHUB_ENV"
         continue-on-error: true
+      - name: Install a legacy Playwright and its Chromium (pw-107, pw-108)
+        if: startsWith(matrix.target, 'pw-')
+        shell: bash
+        run: |
+          if [ "${{ matrix.target }}" = "pw-107" ]; then v=1.27.1; else v=1.28.1; fi
+          mkdir legacy
+          cp ci-run.cjs repro.html repro-control.html legacy/
+          cd legacy
+          npm init -y >/dev/null
+          npm install playwright@$v
+          npx playwright install --with-deps chromium
+        continue-on-error: true
       - name: Print the repro, the control, and an empty page
         shell: bash
         run: |
           echo "| OS | target | version | repro bytes | control bytes | empty bytes | result |" >> "$GITHUB_STEP_SUMMARY"
           echo "|---|---|---|---|---|---|---|" >> "$GITHUB_STEP_SUMMARY"
-          if [ "${{ matrix.target }}" = "known-good" ]; then
-            node ci-run.cjs path known-good-127
-          else
-            node ci-run.cjs "${{ matrix.target }}" "${{ matrix.target }}"
-          fi
+          case "${{ matrix.target }}" in
+            cft-127) node ci-run.cjs path cft-127 ;;
+            pw-107|pw-108) cd legacy && node ci-run.cjs chromium "${{ matrix.target }}" ;;
+            *) node ci-run.cjs "${{ matrix.target }}" "${{ matrix.target }}" ;;
+          esac

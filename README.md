@@ -58,20 +58,42 @@ makes no difference (the CLI with and without `--disable-gpu` is blank).
 
 ## When it started
 
-Measured with the `Page.printToPDF` command line on macOS 26 arm64. The page text was shorter in the earlier
-runs than in the final `repro.html`; the unrelated text was moved only to stop overlaps, and the result did not
-change on re-runs with the final file in Chrome 155, Chromium 156, and Chromium 133.
+**The version window depends on the machine.** The same Chrome for Testing 127.0.6533.119 headless shell prints
+`repro.html` correctly on my physical Mac and is blank on every GitHub-hosted runner (Linux, Windows, macOS Intel,
+macOS arm64) and in a Linux container. I do not know why. Not the cause (all tested, see `COVERAGE.md`): CPU count,
+timing, viewport, device scale factor, locale, page lifecycle, fonts, and GPU-related flags.
+
+The page text was shorter in the earlier runs than in the final `repro.html`; the unrelated text was moved only to
+stop overlaps. The result did not change on re-runs with the final file.
+
+**Linux container** (Ubuntu 22.04, arm64, Docker Desktop VM; Playwright's bundled Chromium, `page.pdf`):
+
+| Chromium | `repro.html` | `repro-control.html` |
+|---|---|---|
+| 107.0.5304.18 | **prints correctly** (11,765 bytes) | 11,779 |
+| 108.0.5359.29 | **blank** (671 bytes) | 11,767 |
+| 109, 110, 114, 117, 120, 123, 125, 127.0.6533.17, 128.0.6613.18 | blank | prints |
+
+So on Linux the bug is in every build from Chromium 108 on, and Chromium 107 is the last good one I found. An empty
+page prints 666 to 887 bytes, and a blank `repro.html` is within 100 bytes of the empty page in the same build.
+
+**GitHub-hosted runners** (Ubuntu x64, Windows x64, macOS 15 Intel, macOS arm64; Chrome for Testing 127.0.6533.119
+headless shell): `repro.html` is blank on all four (847 bytes) while the control prints. A control build that prints
+on every runner is still needed; see `COVERAGE.md` ("Controls").
+
+**macOS 26 arm64, physical machine** (`Page.printToPDF` command line):
 
 | Build | Old headless / headless shell | New headless |
 |---|---|---|
 | Chrome 113.0.5672.63, 116.0.5845.96, 124.0.6367.207, 127.0.6533.119 | **prints correctly** | 124 and 127 blank; 113 and 116 did not run here |
+| Chromium 107.0.5304.18 and 108.0.5359.29 (Playwright) | prints correctly | not run |
 | Chrome 128.0.6613.8, 128.0.6613.84 | **blank** | did not run here (the build hangs, also for the control) |
 | Chromium 129 to 156 | **blank** | blank (155, and Linux 133) |
 
-So in old headless mode and in chrome-headless-shell the bug first appears in Chrome 128. New headless mode is
-blank in the oldest build that runs here (124). Headed Chrome printed correctly on 127, 128, and 155.
+So on this Mac, old headless and chrome-headless-shell first fail in Chrome 128, and new headless is blank in the
+oldest build that runs here (124). Headed Chrome printed correctly on 127, 128, and 155.
 
-**Position bisect (old headless, `--headless=old`, macOS 26 arm64, Chromium snapshot builds):** the last build that
+**Position bisect (macOS 26 arm64 physical machine, old headless, `--headless=old`, Chromium snapshot builds):** the last build that
 prints correctly is position 1316017 (`57d31eae8e4e`, both files 29,540 bytes). The first build that blanks is
 position 1318290 (`e32ab6f1f764`, `repro.html` 855 bytes, control 29,542). The regression is in this range of about
 2,300 positions:

@@ -16,13 +16,23 @@ A blank result only counts if the setup is shown to work. Each CI run has three 
 |---|---|---|
 | `repro-control.html` in the same browser | the browser or OS cannot print at all | every run (the `control` column) |
 | An empty page in the same browser | the 3,000-byte threshold is wrong for this runner (an empty page prints about 750 to 1,000 bytes, about the same as the blank repro) | every run (the `empty` column); a run is INVALID if the empty page is over the threshold |
-| A **known-good build**: Chrome for Testing 127.0.6533.119 headless shell, the last build before the Chrome 128 regression | the setup, the runner, or the file loading breaks `repro.html` for any Chrome | the `known-good` target on every OS |
+| A **known-good build**: Chromium 107.0.5304.18 (Playwright 1.27.1), the last build that printed `repro.html` in a Linux container | the setup, the runner, or the file loading breaks `repro.html` for any Chrome | the `pw-107` target on every OS |
+| The **first-bad build**: Chromium 108.0.5359.29 (Playwright 1.28.1) | brackets the Linux window on each runner | the `pw-108` target on every OS |
 
-The known-good row must say `prints` with `repro` and `control` about equal. If it says `BLANK` on a runner, treat every
-row for that OS as no data. Local result on macOS arm64: `repro=15559 control=15559 empty=751 | prints`.
+The `pw-107` row must say `prints` with `repro` and `control` about equal. If it says `BLANK` on a runner, treat every
+row for that OS as no data.
 
-The first CI run (actions/runs/38961106399) had the first control only. The known-good target and the empty-page
-check were added afterwards and **have not run on CI yet**.
+**The first known-good choice failed.** Chrome for Testing 127.0.6533.119 headless shell printed `repro.html` on a
+physical Mac (`repro=15559 control=15559 empty=751`) but was BLANK on all four GitHub-hosted runners (run
+actions/runs/38981978247: `repro=847` against controls of 8,991 to 20,653 bytes). A fresh clone and the same install steps
+printed correctly on the Mac, so the difference is the machine and not the repo, the Playwright version, or the
+install. The same build blanks in a Linux container. It is now the `cft-127` target: a data point, not a control.
+
+That result is why a control must be a build that is shown to print **on the same kind of machine**. On the Mac,
+Chromium 107 and 108 both print. In a Linux container, 107 prints and 108 is blank.
+
+The `pw-107` and `pw-108` targets, and the empty-page check, were added after run 38981978247 and
+**have not run on CI yet**.
 
 ## 1. Matrix
 
@@ -34,6 +44,9 @@ check were added afterwards and **have not run on CI yet**.
 | OS | Windows (GitHub `windows-latest`, 10.0.26100) x64 | done, CI | BLANK: Chrome 155.0.8059.85, Chrome beta 157.0.8103.6, Chromium 156.0.8078.4 (954, 954, 839 bytes; controls 20,741, 20,743, 20,626) |
 | OS | macOS Intel (GitHub `macos-15-intel`, Darwin 24.6) x64 | done, CI | BLANK: Chrome 155.0.8059.85, Chrome beta 157.0.8103.6, Chromium 156.0.8078.4 (960, 960, 839 bytes; controls 15,654, 15,656, 15,533) |
 | OS | macOS Apple silicon (GitHub `macos-latest`, Darwin 25.6) arm64 | done, CI | BLANK on the same three browsers, same sizes as macOS Intel |
+| Platform dependence | Chrome for Testing 127.0.6533.119 headless shell on 4 GitHub runners, a Linux container, and a physical Mac | done | BLANK on the 4 runners and in the container; prints on the physical Mac. Cause unknown. |
+| Factors that did **not** change the result | Linux container, Chromium 127: wait 1.5 s, two animation frames, `fonts.ready`, screenshot first, pdf twice, print media, viewport 800x600 / default / 390x844 mobile, device scale factor 2, `file://` URL instead of `setContent`, `LANG`, 1 CPU (`--cpus=1`). Mac, Chrome for Testing 127 shell: `--disable-gpu`, `--disable-software-rasterizer`, SwiftShader, `--enable-unsafe-swiftshader`, and 8 font families. | done | Linux stays BLANK; Mac stays correct |
+| Linux version scan (Docker Desktop, Ubuntu 22.04 arm64, Playwright's Chromium) | 107.0.5304.18 prints; 108.0.5359.29, 109, 110, 114, 117, 120, 123, 125, 127.0.6533.17, 128.0.6613.18 blank | done | the Linux regression is between 107 and 108 |
 | Regression range by position (old headless, Chromium snapshots, macOS arm64) | 1316017 good, 1318290 bad | done, partial | a range of about 2,300 positions. Builds near 1317170 to 1317188 printed nothing here, so it is not one commit. Finish it with `bisect-builds.py` on a machine where they run. |
 | Chrome version, old headless (`--headless=old`) | 113.0.5672.63, 116.0.5845.96, 124.0.6367.207, 127.0.6533.119 | done | prints correctly |
 | Chrome version, old headless (`--headless=old`) | 128.0.6613.8, 128.0.6613.84 | done | BLANK |
