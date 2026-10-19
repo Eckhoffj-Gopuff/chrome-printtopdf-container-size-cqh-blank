@@ -1,7 +1,7 @@
 # Chromium bug report text (not filed)
 
 For https://issues.chromium.org. Component suggestion: Blink>Layout (the reporter should choose). Paste the text below
-the line. Every version, byte count, and run behind it is in `DETAILS.md`. The test matrix is in `COVERAGE.md`.
+the line. Every version, byte count, and run behind it is in `DETAILS.md` in the repro repository; the test matrix is in `COVERAGE.md`.
 
 ---
 
@@ -12,7 +12,7 @@ the line. Every version, byte count, and run behind it is in `DETAILS.md`. The t
 
 ### Steps to reproduce
 
-1. Download `repro.html` and `repro-control.html` from
+1. Download `repro.html` and `repro-control.html` from the repro repository (all files named in this report are in it):
    https://github.com/Eckhoffj-Gopuff/chrome-printtopdf-container-size-cqh-blank
 2. Run `chrome --headless --no-pdf-header-footer --print-to-pdf=out.pdf file:///path/to/repro.html`, then `pdftotext out.pdf -`.
    Or open `repro.html` in Chrome on macOS or Linux, press Ctrl/Cmd+P, and choose "Save as PDF".
@@ -61,7 +61,7 @@ Overriding the container or the font size in `@media print` also avoids it (but 
 ### Not tested
 
 Chrome dev and canary, Edge headless, older Chrome in the macOS print dialog. I did not find the root cause. Hypotheses
-and the commits I read are in `CHROMIUM-SOURCE-NOTES.md`.
+and the commits I read are in the repro repository: https://github.com/Eckhoffj-Gopuff/chrome-printtopdf-container-size-cqh-blank/blob/main/CHROMIUM-SOURCE-NOTES.md
 
 ### Impact
 
@@ -70,4 +70,4 @@ headless PDF export blank, including the other tiles. PNG screenshots were corre
 
 ### Attachments
 
-`repro.html`, `repro-control.html`, and the blank and correct PDFs and print dialog screenshots in `results/`.
+`repro.html` and `repro-control.html`, plus the blank and correct PDFs and print dialog screenshots in `results/`, are in the repro repository. All versions, byte counts, and runs behind this report are in https://github.com/Eckhoffj-Gopuff/chrome-printtopdf-container-size-cqh-blank/blob/main/DETAILS.md , and the test matrix is in https://github.com/Eckhoffj-Gopuff/chrome-printtopdf-container-size-cqh-blank/blob/main/COVERAGE.md .
