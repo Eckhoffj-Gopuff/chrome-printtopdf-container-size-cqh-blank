@@ -28,11 +28,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Install the harness (Playwright 1.27.1) and the system libraries Chromium needs
+      - name: Install the harness (Playwright 1.27.1; its own browser is not used)
         working-directory: tools
+        run: npm install
+      - name: Install libraries that Chromium snapshot builds need (best effort)
+        # Ubuntu 24.04 renamed some packages with a t64 suffix. Playwright 1.27.1's --with-deps asks for the old names
+        # and fails, so install the few that matter by hand. The runner already has most of them.
         run: |
-          npm install
-          npx playwright install --with-deps chromium
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libnss3 libgbm1 libasound2t64 libxkbcommon0 libxshmfence1 libxcomposite1 libxdamage1 libxrandr2 libxfixes3 libcups2t64 libatk1.0-0t64 libatk-bridge2.0-0t64 libpango-1.0-0 libcairo2 fonts-liberation || true
       - name: Bisect
         working-directory: tools
         env:
