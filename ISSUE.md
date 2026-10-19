@@ -6,6 +6,20 @@ that the text below depends on.
 
 **Title:** Printing (print dialog and headless Page.printToPDF) produces an entirely blank page when a descendant uses `cqh` inside `container-type: size` under an absolutely positioned box
 
+## Summary
+
+- **Symptom:** the whole printed page is blank (not only the `cqh` text). The page is correct on screen and in screenshots.
+- **Trigger:** a `cqh` unit (also `cqb`, `cqmin`) used in any property inside a `container-type: size` element, with an
+  absolutely positioned box inside a `position: relative` ancestor. `cqw`, `container-type: inline-size`, and `@container`
+  queries do not trigger it.
+- **Affected:** the print dialog (Chrome 155 on macOS; Chromium 108, 127, 156 on Linux) and headless `Page.printToPDF`
+  (Chromium 108 to 156 on Linux, Windows, and macOS CI runners). Not affected: Firefox 138, Safari 26.6 (preview only).
+- **Regression:** Chromium 107.0.5304.18 prints correctly and 108.0.5359.29 is blank, on all four GitHub-hosted runners.
+  A Linux position bisect gives 12 commits (r1053680 to r1053692), including `06876550989f` "Set the LayoutNGPrinting
+  feature to 'stable'." `--disable-features=LayoutNGPrinting` fixes 108 to 113 and has no effect from 114.
+- **Exception:** on one physical Mac (macOS 26 arm64), old headless prints correctly until Chrome 128. I do not know why.
+- **Not found:** the defect itself. This report gives the trigger and the regression range, not a diagnosis.
+
 ## Steps to reproduce
 
 1. Download `repro.html` and `repro-control.html` from https://github.com/Eckhoffj-Gopuff/chrome-printtopdf-container-size-cqh-blank
@@ -46,8 +60,10 @@ On screen both pages are identical, and the `cqh` text is 22.88px (13% of the 17
   adds a base feature as a kill switch. With the kill switch, `--disable-features=LayoutNGPrinting` (Linux container,
   Playwright's Chromium, headless `page.pdf`):
   108.0.5359.29 **prints** (11,753 bytes; default 671 = blank), 109.0.5414.46 prints, 110.0.5481.38 prints,
-  112.0.5615.29 prints (11,570), and 114.0.5735.35 is **still blank** (672), as is 127.0.6533.17 (847). So the kill switch
-  works on 108 to 112 and has no effect by 114 (113 not tested). I did not find the defect itself.
+  112.0.5615.29 prints (11,570), 113.0.5672.53 prints (11,570; default 671). It has **no effect** on 114.0.5735.35 (672),
+  115.0.5790.75 (672), 117.0.5938.62 (666), 120.0.6099.28 (666), 123.0.6312.4 (847), 125.0.6422.26 (847),
+  127.0.6533.17 (847), or 128.0.6613.18 (847): all still blank. So the kill switch works on 108 to 113 and not from
+  114 on (111 was not tested). I did not find the defect itself.
   `--enable-blink-features=LayoutNGPrinting` on Chromium 107 did **not** reproduce it (11,765 bytes), so turning that
   feature on is not the whole change.
 - **My physical Mac is the exception.** There, old headless prints correctly until Chrome 128 (below). Chrome for Testing
@@ -77,8 +93,8 @@ On screen both pages are identical, and the `cqh` text is 22.88px (13% of the 17
   not know why.
 - **The print dialog has the same version boundary on Linux.** Headed Chromium on a virtual display in Docker (Ubuntu 22.04
   arm64, Ctrl+P, destination Save as PDF; `tools/dialog-linux.sh`; screenshots in `results/linux-dialog/`): for
-  `repro.html`, Chromium **107.0.5304.18 shows the text** (the `10.3.0` is much larger than on screen, as old print layout
-  resolved `cqh`), **108.0.5359.29 is blank** (only the date, title and URL that Chrome adds), **127.0.6533.17 is blank**, and
+  `repro.html`, Chromium **107.0.5304.18 shows the text** (the `10.3.0` is much larger than on screen, so `cqh` did not
+  resolve against the 176px container there; I did not check what it resolved against), **108.0.5359.29 is blank** (only the date, title and URL that Chrome adds), **127.0.6533.17 is blank**, and
   **156.0.8078.4 is blank**. `repro-control.html` shows all the text on 108. Chromium 108 with
   `--disable-features=LayoutNGPrinting` shows the text again. So the dialog and `page.pdf` fail on the same builds and the
   same kill switch fixes both.
@@ -92,7 +108,9 @@ On screen both pages are identical, and the `cqh` text is 22.88px (13% of the 17
 ## What triggers it (changing one thing at a time)
 
 - `cqh` inside `container-type: size` is blank. A fixed font size with the same `container-type: size` prints.
-  `cqw` prints. `cqb` and `cqmin` are blank. `container-type: inline-size` and `contain: size` print.
+  `cqw` prints. `cqb` and `cqmin` are blank. `container-type: inline-size` and `contain: size` print. (This bullet
+  and the next two were measured on an earlier, smaller version of the page, by PDF size, Chrome 155 and
+  Chromium 156. The table below uses the final `repro.html`.)
 - Removing the `position: relative` ancestor, or removing `position: absolute` from the box, makes the content print.
 - The box height does not matter (100px and 400px are still blank).
 
@@ -115,7 +133,9 @@ More experiments, one change at a time from `repro.html`. The result is the same
 So it is the block-axis container query **unit** (`cqh`), in any property, inside a `container-type: size` element. Container
 **queries** (`@container (min-height: …)`) on the same container print correctly, and it is not about the page being split
 across pages. A print-only CSS override avoids it (for example `@media print` with a fixed size, or `container-type:
-inline-size`), which also shows `@media print` rules are applied.
+inline-size`), which also shows `@media print` rules are applied. That holds only when the page uses print media. After
+`Emulation.setEmulatedMedia({ media: 'screen' })` the same `@media print` override does not apply and the PDF is blank
+(Chromium 108.0.5359.29 and 156.0.8078.4, Linux; with `media: 'print'` it prints).
 
 ## Environment
 
@@ -136,13 +156,13 @@ Every `Page.printToPDF` variant I tried is blank: default Letter, A4 landscape, 
 
 ## Not tested
 
-Chrome dev and canary and Edge. The print dialog was tested by hand on one system (Chrome 155.0.8059.84, macOS
-26.6.1); Windows and Linux dialogs are untested. The Windows, Linux, and macOS CI runs above were headless only. Which
-older Chrome versions the print dialog is blank in is not known, so the 107 to 108 window above is for headless
-`page.pdf` only.
-The position bisect covers old headless on Linux x64 (and, separately, my physical Mac, for its Chrome 128 boundary). I did
-not bisect new headless or the print dialog, and I did not find why my physical Mac prints correctly on 108 through 127
-(Chromium 108 on that Mac prints under every `LayoutNGPrinting` setting I tried).
+Chrome dev and canary, Edge, and the print dialog on Windows. The CI runs above were headless only. The dialog was
+tested by hand in Chrome 155.0.8059.84 on macOS 26.6.1, and by script in Chromium 107, 108, 127, and 156 on Linux
+(arm64 container, virtual display); older Chrome on a macOS dialog could not be run (the builds crash or do not render on
+macOS 26). The position bisect covers old headless on Linux x64 (and, separately, my physical Mac, for its Chrome 128
+boundary). I did not bisect new headless or the print dialog. I did not find why my physical Mac prints correctly on 108
+through 127 (Chromium 108 on that Mac prints under every `LayoutNGPrinting` setting I tried). Kill switch results for
+Chromium 111, 116, 118, 119, 121, 122, 124, and 126 were not collected.
 
 ## Real-world impact
 

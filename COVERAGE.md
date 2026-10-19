@@ -60,8 +60,8 @@ Chromium 107 and 108 both print. In a Linux container, 107 prints and 108 is bla
 | Chrome version, old headless (`--headless=old`) | 128.0.6613.8, 128.0.6613.84 | done | BLANK |
 | Chrome version, chrome-headless-shell (Chrome for Testing) | 127.0.6533.119 | done | prints correctly (29,542 bytes, same as the control) |
 | Chrome version, chrome-headless-shell (Chrome for Testing) | 128.0.6613.84 | done | BLANK (855 bytes; the control prints 29,542) |
-| Chrome version, Playwright's bundled Chromium | 125.0.6422.26, 127.0.6533.17 | done | prints correctly |
-| Chrome version, Playwright's bundled Chromium | 128.0.6613.18, 129.0.6668.29, 130.0.6723.31, 133.0.6943.16 (Linux), 153.0.8010.12, 156.0.8078.4 | done | BLANK |
+| Chrome version, Playwright's bundled Chromium, **physical Mac only** | 125.0.6422.26, 127.0.6533.17 | done | prints correctly (the same builds are blank on Linux and the CI runners) |
+| Chrome version, Playwright's bundled Chromium, physical Mac (133 on Linux) | 128.0.6613.18, 129.0.6668.29, 130.0.6723.31, 133.0.6943.16, 153.0.8010.12, 156.0.8078.4 | done | BLANK |
 | Chrome version, new headless | 124.0.6367.207, 127.0.6533.119, 155.0.8059.84, Linux 133 | done | BLANK |
 | Chrome version, new headless | 113, 116, 120, 128 | no data | the builds hang or crash on this macOS, even for the control |
 | Headless mode | old (`--headless=old`, chrome-headless-shell) and new | done | see the version rows |
@@ -78,7 +78,7 @@ Chromium 107 and 108 both print. In a Linux container, 107 prints and 108 is bla
 | **Print dialog on Linux, by version** (headed Chromium on Xvfb in Docker, Ubuntu 22.04 arm64, `tools/dialog-linux.sh`) | 107.0.5304.18, 108.0.5359.29, 127.0.6533.17, 156.0.8078.4; 108 with `--disable-features=LayoutNGPrinting`; 108 control | done | **107 shows the text; 108, 127, 156 are blank; 108 with the kill switch shows the text; the control shows the text.** Same boundary and same kill switch as headless `page.pdf`. Screenshots in `results/linux-dialog/`. |
 | Print dialog on Windows | | **open**, manual | |
 | Print dialog on older Chrome on macOS | 116, 124, 127 (Chrome for Testing), r1058960 (Chromium snapshot) | no data | on macOS 26.6.1 the snapshot crashes at startup (signal 11) and the Chrome for Testing builds were reported not to render. Use `tools/dialog-linux.sh` instead. |
-| **LayoutNGPrinting kill switch, by version** (Linux container, `--disable-features=LayoutNGPrinting`) | 108, 109, 110, 112 fix it; 114 and 127 do not (no effect) | done, partial | 113 and 115 to 125 not all tested yet (scan in progress when this was written). |
+| **LayoutNGPrinting kill switch, by version** (Linux container, `--disable-features=LayoutNGPrinting`) | 108, 109, 110, 112, 113 fix it; 114, 115, 117, 120, 123, 125, 127, 128 do not (no effect) | done | 111, 116, 118, 119, 121, 122, 124, 126 not tested. The cutoff is between 113 and 114. |
 | `LayoutNGPrinting` on 107 | `--enable-features=` and `--enable-blink-features=LayoutNGPrinting` | done | still prints: turning the feature on in 107 does not reproduce it |
 | What the print layout trips over | 10 variants of `repro.html`, Chromium 108 and 156 | done | `cqh` in any property in a size container is blank; `@container` queries on it print; one tall page is still blank; `@media print` overrides print. See `README.md`. |
 | Firefox | 138.0.1, macOS, WebDriver `printPage` | done | NOT affected: all text printed |

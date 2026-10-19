@@ -124,7 +124,7 @@ that the two ends behave as expected, then bisects (it took about 90 seconds).
 The change in the bisect range is `06876550989f` "Set the LayoutNGPrinting feature to 'stable'." (Bug: 1121942, commit position
 #1053686). It turns the existing LayoutNG print code on by default and adds a base feature as a kill switch. So the blank comes
 from the LayoutNG print layout that became the default in Chrome 108. The kill switch works on 108 to 112 and has no effect by
-114 (113 not tested). Turning the feature on in 107, by either switch, did not reproduce it, so it may depend on other changes.
+114 (113 prints with it: 11,570 against 671 by default; 115, 117, 120, 123, 125, and 128 are blank with or without it). Turning the feature on in 107, by either switch, did not reproduce it, so it may depend on other changes.
 I did not diagnose the defect. On my physical Mac, Chromium 108 prints under every setting of this flag, which I cannot explain.
 
 **What the print layout trips over** (Linux container; identical results on Chromium 108.0.5359.29 and 156.0.8078.4; headless
@@ -149,7 +149,7 @@ too). A print-only CSS override avoids it, which also shows `@media print` rules
 
 **The print dialog on Linux** (headed Chromium on a virtual display in Docker; `tools/dialog-linux.sh`; screenshots in
 `results/linux-dialog/`): the preview for `repro.html` shows the text on Chromium **107.0.5304.18** (the `10.3.0` is much larger
-than on screen, because old print layout resolved `cqh` differently) and is **blank** on **108.0.5359.29**, **127.0.6533.17**, and
+than on screen, so `cqh` did not resolve against the container there; I did not check what it resolved against) and is **blank** on **108.0.5359.29**, **127.0.6533.17**, and
 **156.0.8078.4**. `repro-control.html` shows all the text on 108. Chromium 108 with `--disable-features=LayoutNGPrinting` shows
 the text again. So the print dialog and `page.pdf` fail on the same builds, and the same kill switch fixes both.
 
@@ -164,8 +164,8 @@ the text again. So the print dialog and `page.pdf` fail on the same builds, and 
 
 So on this Mac, old headless and chrome-headless-shell first fail in Chrome 128, and new headless is blank in the
 oldest build that runs here (124). A DevTools `Page.printToPDF` in a headed window printed correctly on 127, 128,
-and 155, but that is not the print dialog, which is blank in Chrome 155.0.8059.84. The dialog has not been tried on
-older builds yet (`tools/run-chrome.sh` opens one beside your normal Chrome).
+and 155, but that is not the print dialog, which is blank in Chrome 155.0.8059.84. On macOS the dialog could not be tried on
+older builds (they crash or do not render on macOS 26). The Linux dialog results above cover the versions.
 
 **Position bisect (macOS 26 arm64 physical machine, old headless, `--headless=old`, Chromium snapshot builds):** the last build that
 prints correctly is position 1316017 (`57d31eae8e4e`, both files 29,540 bytes). The first build that blanks is
@@ -232,8 +232,8 @@ See `COVERAGE.md` for the full list and the steps. At the time of writing:
   `chrome-beta` channels, Chrome for Testing 127, and Chromium 107 and 108. Headed Chrome was tested only on my Mac.
 - The cause inside LayoutNG printing. The Linux bisect gives a 12-commit range and a feature flag that fixes 108, but
   not the defect itself. The bisect covers old headless on Linux x64, not new headless or the print dialog.
-- The print dialog was tested by hand on one system: Chrome 155.0.8059.84 on macOS 26.6.1. Windows and Linux print
-  dialogs are untested. Which older Chrome versions the dialog is blank in is not known.
+- The print dialog was tested by hand in Chrome 155.0.8059.84 on macOS 26.6.1, and by script on Linux (Chromium 107,
+  108, 127, 156). The Windows dialog and older Chrome in the macOS dialog are untested.
 - WebKit browsers other than Safari 26.6 on macOS, and Safari on other systems.
 - Why it happens. This is a report of the behavior, not a diagnosis.
 
