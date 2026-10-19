@@ -1,0 +1,9 @@
+{
+  "name": "position-bisect-tools",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Position bisect for the headless printToPDF regression. Playwright 1.27.1 is the harness that printed Chromium 107 correctly and 108 blank.",
+  "dependencies": {
+    "playwright": "1.27.1"
+  }
+}

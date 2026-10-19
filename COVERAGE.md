@@ -63,7 +63,7 @@ Chromium 107 and 108 both print. In a Linux container, 107 prints and 108 is bla
 | Chrome version, new headless | 124.0.6367.207, 127.0.6533.119, 155.0.8059.84, Linux 133 | done | BLANK |
 | Chrome version, new headless | 113, 116, 120, 128 | no data | the builds hang or crash on this macOS, even for the control |
 | Headless mode | old (`--headless=old`, chrome-headless-shell) and new | done | see the version rows |
-| **Headed** Chrome (a visible window), raw DevTools `Page.printToPDF` | 127.0.6533.119, 128.0.6613.84, 155.0.8059.84 | done | **NOT affected**: 17,480 / 17,480 / 16,886 bytes, all text present. The same Chrome 155 build, file and script blank when headless. |
+| Headed Chrome (a visible window), **raw DevTools `Page.printToPDF`** | 127.0.6533.119, 128.0.6613.84, 155.0.8059.84 | done | prints correctly: 17,480 / 17,480 / 16,886 bytes, all text present. The same Chrome 155 build, file and script blank when headless. **This does not mean headed Chrome is safe**: the print dialog is blank (next row). |
 | GPU | `--disable-gpu` and without it (Chrome 155, new headless) | done | BLANK both ways |
 | Chrome channel | stable (155) | done | BLANK on Linux, Windows, and both Macs |
 | Chrome channel | beta (157.0.8103.6) | done, CI | BLANK on Linux, Windows, and both Macs |
@@ -72,7 +72,9 @@ Chromium 107 and 108 both print. In a Linux container, 107 prints and 108 is bla
 | Microsoft Edge | stable | **open**, CI | |
 | `Page.printToPDF` options | Letter, A4 landscape, custom size, `scale`, `printBackground:false`, `preferCSSPageSize`, tagged + outline, `ReturnAsStream` | done | all 8 BLANK |
 | Other capture paths | `captureScreenshot` (viewport, full page), print-media emulation + screenshot | done | correct, identical to the control |
-| Print from the Chrome UI (Ctrl/Cmd+P, Save as PDF) | **open**, manual (section 3) | | |
+| **Print dialog** (Ctrl/Cmd+P, Save as PDF), headed Chrome, macOS | Letter, portrait, margins None, scale Default, background graphics off; page served from `http://localhost:63342` | done once, by hand | **BLANK preview for `repro.html`; the control's preview shows all the text.** Chrome version, the saved PDF, and a `file://` URL are **not recorded yet**. |
+| Print dialog on Windows and Linux | | **open**, manual | |
+| Print dialog: which Chrome versions | | **open**, manual | the dialog's window is unknown; the 107 to 108 window is for headless `page.pdf` only |
 | Firefox | 138.0.1, macOS, WebDriver `printPage` | done | NOT affected: all text printed |
 | Safari / WebKit | **open**, manual (section 3) | | |
 | `Page.captureSnapshot` (MHTML) | not applicable | skipped | it saves markup and does not render |
@@ -137,9 +139,17 @@ To add Edge, add `msedge` to the `target` list. To test an exact Chrome build on
 
 ### Print from the Chrome UI (Ctrl/Cmd+P)
 
-The print dialog uses Chrome's print preview path, which can differ from `Page.printToPDF`. Headed
-`Page.printToPDF` is not affected (section 1), so the expected result is that the dialog prints
-correctly. Confirm it by hand before the report says so.
+**Result so far (macOS, by hand):** the preview is **blank for `repro.html`** and shows all the text for
+`repro-control.html`, so the bug is not headless-only. A DevTools `Page.printToPDF` in a headed window printed correctly,
+so the dialog path and that call differ. What is still missing, to make the report complete:
+
+- The Chrome version (`chrome://version`) and macOS version.
+- The saved PDF from the dialog, opened and run through `pdftotext`: is it blank too, or only the preview?
+- The same test opened with a `file://` URL (the first test used `http://localhost:63342`).
+- The same test on an older Chrome. The headless window is 107 to 108; the dialog's window may differ.
+- Save the two dialog screenshots as `results/print-dialog-repro.png` and `results/print-dialog-control.png`.
+
+The steps, for repeating it on another system:
 
 1. Open `repro.html` in Chrome. Confirm "10.3.0" and the two UNRELATED lines show on screen.
 2. Press Ctrl+P (Cmd+P on macOS). Set **Destination** to **Save as PDF**. Turn on **Background graphics**.

@@ -1,0 +1,43 @@
+name: position bisect (Linux)
+
+# Finds the Chromium commit range for the regression between 107.0.5304.18 (prints) and 108.0.5359.29 (blank),
+# on a GitHub-hosted Ubuntu runner, using Chromium snapshot builds. Trigger it by hand (workflow_dispatch).
+#
+# Chromium 107 branched from main at position 1047731 and 108 at 1058933 (chromiumdash fetch_version).
+# The script first checks that a build near each end behaves as expected, and fails if not.
+# The result is in the job summary.
+on:
+  workflow_dispatch:
+    inputs:
+      good_pos:
+        description: "Chromium main-branch position of a build that prints (default: 107 branch point)"
+        default: "1047731"
+      bad_pos:
+        description: "Chromium main-branch position of a build that is blank (default: 108 branch point)"
+        default: "1058933"
+      endpoints_only:
+        description: "Only check the two ends, do not bisect (1 or empty)"
+        default: ""
+
+jobs:
+  bisect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install the harness (Playwright 1.27.1) and the system libraries Chromium needs
+        working-directory: tools
+        run: |
+          npm install
+          npx playwright install --with-deps chromium
+      - name: Bisect
+        working-directory: tools
+        env:
+          GOOD_POS: ${{ inputs.good_pos }}
+          BAD_POS: ${{ inputs.bad_pos }}
+          ENDPOINTS_ONLY: ${{ inputs.endpoints_only }}
+          SNAPSHOT_PLATFORM: Linux_x64
+        run: node position-bisect.cjs
