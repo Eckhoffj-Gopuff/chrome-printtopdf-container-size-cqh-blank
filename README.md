@@ -9,7 +9,8 @@ The page renders correctly on screen and in screenshots. Firefox prints it corre
 A DevTools `Page.printToPDF` call in a headed Chrome window printed `repro.html` correctly in my tests (Chrome 155,
 127, 128 on macOS), while the print dialog did not. Why those two headed paths differ is not known.
 
-`COVERAGE.md` lists every case that was tested, every case that was not, and how to run the rest.
+`ISSUE.md` is the short text for the Chromium tracker. `DETAILS.md` has every version and run behind it.
+`CHROMIUM-SOURCE-NOTES.md` has what the Chromium commits show. `COVERAGE.md` lists every case that was tested, every case that was not, and how to run the rest.
 
 ## Reproduce
 

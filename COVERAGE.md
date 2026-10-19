@@ -206,8 +206,8 @@ needed if the report should say "Firefox is not affected" for those systems.
 ## 4. When the report is ready
 
 - Every row in the matrix is `done`, `no data` with a reason, or `skipped` with a reason.
-- The results table in `README.md` and the "Additional information" in `ISSUE.md` use only these rows.
-- The regression window in `ISSUE.md` is the narrowest one in the version rows.
+- The results table in `README.md` and the "Additional information" in `ISSUE.md` and `DETAILS.md` use only these rows.
+- The regression window in `ISSUE.md` and `DETAILS.md` is the narrowest one in the version rows.
 - Attachments for the tracker: `repro.html`, `repro-control.html`, and the PDFs in `results/`.
 
 ## 5. Finishing the position bisect
