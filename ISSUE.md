@@ -33,7 +33,20 @@ On screen both pages are identical, and the `cqh` text is 22.88px (13% of the 17
   **108.0.5359.29 is blank** on all four (671 bytes, the same as an empty page; the controls print 10,606 to 21,688 bytes).
   The same holds in a Linux container (Ubuntu 22.04, arm64): 107 prints, 108 and every later build I ran are blank
   (109, 110, 114, 117, 120, 123, 125, 127.0.6533.17, 128.0.6613.18, 133.0.6943.16). Chromium 107 on every runner is the
-  control that shows the test setup works. The commit range inside 107 to 108 is not narrowed yet.
+  control that shows the test setup works.
+- **Position bisect on Linux x64: 12 commits.** Chromium snapshot builds on a GitHub Ubuntu runner (headless `page.pdf`,
+  same harness as above; run https://github.com/Eckhoffj-Gopuff/chrome-printtopdf-container-size-cqh-blank/actions/runs/39272077921 ):
+  last good **r1053680** (`54c0976669f28779ae1f9c0d7e66c7657c49469e`, 108.0.5333.0), first bad **r1053692**
+  (`3af31e148c049854a63e6e831aca5862ac98fd09`). Changelog (12 commits):
+  https://chromium.googlesource.com/chromium/src/+log/54c0976669f28779ae1f9c0d7e66c7657c49469e..3af31e148c049854a63e6e831aca5862ac98fd09
+  One commit in that range is about printing: `06876550989f` **"Set the LayoutNGPrinting feature to 'stable'."**
+  (2022-09-30). The others are unrelated rolls and UI changes.
+- **With LayoutNGPrinting disabled, Chromium 108 prints correctly.** Linux container, Playwright's Chromium
+  108.0.5359.29: default 671 bytes (blank), `--disable-features=LayoutNGPrinting` **11,753 bytes, all content**. So the
+  failure is in the LayoutNG print path that became the default in 108. I did not diagnose it further. Checks that did
+  not reproduce it: Chromium 107 with `--enable-features=LayoutNGPrinting` still printed (11,765 bytes), so enabling the
+  feature alone may not be enough there; and Chromium 127 with `--disable-features=LayoutNGPrinting` stayed blank (847
+  bytes), so the flag has no effect any more by then.
 - **My physical Mac is the exception.** There, old headless prints correctly until Chrome 128 (below). Chrome for Testing
   127.0.6533.119 headless shell prints on that Mac and is blank on the four runners and in the container. I do not know
   why. These did not change the result: CPU count, timing, viewport, device scale factor, locale, fonts, and GPU-related
@@ -96,8 +109,9 @@ Chrome dev and canary and Edge. The print dialog was tested by hand on one syste
 26.6.1); Windows and Linux dialogs are untested. The Windows, Linux, and macOS CI runs above were headless only. Which
 older Chrome versions the print dialog is blank in is not known, so the 107 to 108 window above is for headless
 `page.pdf` only.
-The commit range inside the 107 to 108 change is not narrowed (the position bisect I ran was on my physical Mac, for
-the Chrome 128 boundary there). I did not bisect new headless.
+The position bisect covers old headless on Linux x64 (and, separately, my physical Mac, for its Chrome 128 boundary). I did
+not bisect new headless or the print dialog, and I did not find why my physical Mac prints correctly on 108 through 127
+(Chromium 108 on that Mac prints under every `LayoutNGPrinting` setting I tried).
 
 ## Real-world impact
 

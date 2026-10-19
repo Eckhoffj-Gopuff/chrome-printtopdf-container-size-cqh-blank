@@ -99,6 +99,28 @@ stop overlaps. The result did not change on re-runs with the final file.
 So on Linux the bug is in every build from Chromium 108 on, and Chromium 107 is the last good one I found. An empty
 page prints 666 to 887 bytes, and a blank `repro.html` is within 100 bytes of the empty page in the same build.
 
+**Linux x64 position bisect (GitHub Actions run 39272077921, Chromium snapshot builds, headless `page.pdf`):** the last
+build that prints is position **1053680** (`54c0976669f2`, 108.0.5333.0); the first that blanks is **1053692**
+(`3af31e148c04`). The 12 commits in between:
+https://chromium.googlesource.com/chromium/src/+log/54c0976669f28779ae1f9c0d7e66c7657c49469e..3af31e148c049854a63e6e831aca5862ac98fd09
+One of them is `06876550989f`, "Set the LayoutNGPrinting feature to 'stable'." (2022-09-30). The rest are unrelated rolls and
+UI changes. The workflow is `.github/workflows/bisect-linux.yml` and the script is `tools/position-bisect.cjs`; it first checks
+that the two ends behave as expected, then bisects (it took about 90 seconds).
+
+**The feature flag confirms it** (Linux container, Playwright's Chromium, headless `page.pdf`):
+
+| Chromium | Arguments | `repro.html` | `repro-control.html` |
+|---|---|---|---|
+| 107.0.5304.18 | none | 11,765 (prints) | 11,779 |
+| 107.0.5304.18 | `--enable-features=LayoutNGPrinting` | 11,765 (still prints) | 11,779 |
+| 108.0.5359.29 | none | **671 (blank)** | 11,767 |
+| 108.0.5359.29 | `--disable-features=LayoutNGPrinting` | **11,753 (prints)** | 11,767 |
+| 127.0.6533.17 | none, and `--disable-features=LayoutNGPrinting` | 847 (blank both) | 10,233 |
+
+So the blank comes from the LayoutNG print layout that became the default in Chrome 108. Enabling it on 107 was not enough to
+reproduce, so it may depend on other features. On 127 the flag no longer changes anything. I did not diagnose the cause. On my
+physical Mac, Chromium 108 prints under every setting of this flag, which I cannot explain.
+
 **macOS 26 arm64, physical machine** (`Page.printToPDF` command line):
 
 | Build | Old headless / headless shell | New headless |
@@ -176,8 +198,8 @@ See `COVERAGE.md` for the full list and the steps. At the time of writing:
 - Chrome dev and canary channels (the dev install did not work on any CI runner), and Microsoft Edge.
 - Windows, Linux, and macOS runners were tested only in headless mode, with Playwright's `chromium`, the `chrome` and
   `chrome-beta` channels, Chrome for Testing 127, and Chromium 107 and 108. Headed Chrome was tested only on my Mac.
-- The exact commit range for the 107 to 108 change. It is one Chrome milestone, not yet a commit range, on any
-  platform. A position bisect on Linux is the next step.
+- The cause inside LayoutNG printing. The Linux bisect gives a 12-commit range and a feature flag that fixes 108, but
+  not the defect itself. The bisect covers old headless on Linux x64, not new headless or the print dialog.
 - The print dialog was tested by hand on one system: Chrome 155.0.8059.84 on macOS 26.6.1. Windows and Linux print
   dialogs are untested. Which older Chrome versions the dialog is blank in is not known.
 - WebKit browsers other than Safari 26.6 on macOS, and Safari on other systems.

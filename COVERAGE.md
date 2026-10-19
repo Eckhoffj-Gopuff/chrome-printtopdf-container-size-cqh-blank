@@ -53,6 +53,8 @@ Chromium 107 and 108 both print. In a Linux container, 107 prints and 108 is bla
 | CI version bracket, with control | Chromium 107.0.5304.18 (`pw-107`) and 108.0.5359.29 (`pw-108`) on ubuntu-latest, windows-latest, macos-latest, macos-15-intel | done, CI | 107 prints on all four; 108 BLANK on all four. This is the regression window on every runner. |
 | Factors that did **not** change the result | Linux container, Chromium 127: wait 1.5 s, two animation frames, `fonts.ready`, screenshot first, pdf twice, print media, viewport 800x600 / default / 390x844 mobile, device scale factor 2, `file://` URL instead of `setContent`, `LANG`, 1 CPU (`--cpus=1`). Mac, Chrome for Testing 127 shell: `--disable-gpu`, `--disable-software-rasterizer`, SwiftShader, `--enable-unsafe-swiftshader`, and 8 font families. | done | Linux stays BLANK; Mac stays correct |
 | Linux version scan (Docker Desktop, Ubuntu 22.04 arm64, Playwright's Chromium) | 107.0.5304.18 prints; 108.0.5359.29, 109, 110, 114, 117, 120, 123, 125, 127.0.6533.17, 128.0.6613.18 blank | done | the Linux regression is between 107 and 108 |
+| **Regression range by position, Linux x64** (GitHub `ubuntu-latest`, Chromium snapshots, headless `page.pdf`, run 39272077921) | 1047731 good end, 1058933 bad end | done | **last good r1053680 (`54c0976669f2`), first bad r1053692 (`3af31e148c04`): 12 commits.** One of them is `06876550989f` "Set the LayoutNGPrinting feature to 'stable'." |
+| **LayoutNGPrinting feature flag** (Linux container, Playwright's Chromium) | 107 with `--enable-features=LayoutNGPrinting`; 108 and 127 with `--disable-features=LayoutNGPrinting` | done | 108 with the feature disabled **prints** (11,753 bytes; default 671). 107 with it enabled still prints. 127: no effect (still blank). On my physical Mac, 108 prints under every setting (cause unknown). |
 | Regression range by position (old headless, Chromium snapshots, macOS arm64) | 1316017 good, 1318290 bad | done, partial | a range of about 2,300 positions. Builds near 1317170 to 1317188 printed nothing here, so it is not one commit. Finish it with `bisect-builds.py` on a machine where they run. |
 | Chrome version, old headless (`--headless=old`) | 113.0.5672.63, 116.0.5845.96, 124.0.6367.207, 127.0.6533.119 | done | prints correctly |
 | Chrome version, old headless (`--headless=old`) | 128.0.6613.8, 128.0.6613.84 | done | BLANK |
@@ -199,18 +201,25 @@ needed if the report should say "Firefox is not affected" for those systems.
 
 ## 5. Finishing the position bisect
 
-The old-headless regression is narrowed to Chromium main positions 1316017 (last good) to 1318290 (first bad):
+**Linux x64: done (12 commits).** `.github/workflows/bisect-linux.yml` runs `tools/position-bisect.cjs` on a GitHub Ubuntu
+runner. It first checks that a build near each end behaves as expected (it fails loudly if not), then bisects Chromium
+snapshot builds. Run 39272077921 found last good r1053680 and first bad r1053692 in about 90 seconds. To repeat or move
+the range, run the workflow by hand from the Actions tab and set `good_pos` and `bad_pos`. The job summary has the commit
+hashes, the changelog link, and every probe.
+
+**My physical Mac, a different boundary: partial.** On that Mac, old headless prints until Chrome 128, a range of 2,300
+positions: 1316017 (last good) to 1318290 (first bad):
 https://chromium.googlesource.com/chromium/src/+log/57d31eae8e4eca52fc106402dec56d772755221c..e32ab6f1f764b726a16f7220e9fd6c0be9996491
+Snapshot builds around 1317170 to 1317188 printed nothing on macOS 26 arm64 (even for the control), so it stopped there.
+To finish it, run the same script on a Mac:
 
-My search stopped there because snapshot builds around 1317170 to 1317188 printed nothing on macOS 26 arm64
-(even for the control). To finish:
+```sh
+cd tools && npm install
+SNAPSHOT_PLATFORM=Mac_Arm GOOD_POS=1316017 BAD_POS=1318290 node position-bisect.cjs   # Mac on Intel: SNAPSHOT_PLATFORM=Mac
+```
 
-1. Use a machine where those builds run, or another OS. Chromium's `tools/bisect-builds.py` (in the Chromium
-   source tree) downloads snapshot builds for a position range and asks whether each one is good or bad.
-2. The test for each build is: run it with `--headless=old --no-pdf-header-footer --print-to-pdf=out.pdf file:///path/to/repro.html`
-   and run `pdftotext out.pdf -`. Empty output is bad. Text present is good. Check `repro-control.html` first, so
-   a build that cannot print at all is not counted as bad.
-3. Replace the range in `README.md` and `ISSUE.md` with the commit that the tool reports.
+It tries neighbouring snapshots when one does not run, but needs builds that start. Why this Mac differs from every
+other machine (it prints on 108 through 127) is not known.
 
-The script I used, which tries neighbouring snapshots when one does not run, is the logic described in step 2
-applied to the snapshot bucket listing. It was run from outside this repo and is not included.
+**Not bisected:** new headless, and the print dialog. The dialog's regression window may differ from headless `page.pdf`.
+Use `tools/run-chrome.sh` (section 3) to find it by hand.
