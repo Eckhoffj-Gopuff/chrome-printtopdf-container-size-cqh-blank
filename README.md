@@ -56,6 +56,7 @@ screenshot of the page as Chrome shows it.
 | Google Chrome 155.0.8059.84, headed, raw DevTools `Page.printToPDF` | macOS 26, arm64 | 16,886 bytes, all text (**not** blank) | 16,886 bytes |
 | **Google Chrome 155.0.8059.84, headed, print dialog (Ctrl/Cmd+P, Save as PDF, Letter, portrait)** | macOS 26.6.1 (25G76); opened from `http://localhost:63342` and from a `file://` URL, same result | **blank preview; the saved PDF is blank** (960 bytes, 1 Letter page, no text, 0 non-white pixels) | preview shows all the text |
 | Firefox 138.0.1, WebDriver `printPage` | macOS 26, arm64 | 12,624 bytes, all text | 12,625 bytes |
+| Safari 26.6 (21624.4.5.11.5), print dialog preview | macOS 26 | **all text shown (not affected)** | not checked |
 
 The same Chrome 155 build, file, and script give 16,886 bytes for a DevTools `Page.printToPDF` in a headed window
 and 974 bytes headless. The print dialog in a headed Chrome is blank for `repro.html`, so a headed window is **not**
@@ -179,7 +180,7 @@ See `COVERAGE.md` for the full list and the steps. At the time of writing:
   platform. A position bisect on Linux is the next step.
 - The print dialog was tested by hand on one system: Chrome 155.0.8059.84 on macOS 26.6.1. Windows and Linux print
   dialogs are untested. Which older Chrome versions the dialog is blank in is not known.
-- Safari and other WebKit browsers.
+- WebKit browsers other than Safari 26.6 on macOS, and Safari on other systems.
 - Why it happens. This is a report of the behavior, not a diagnosis.
 
 ## Origin

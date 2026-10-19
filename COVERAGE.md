@@ -76,7 +76,8 @@ Chromium 107 and 108 both print. In a Linux container, 107 prints and 108 is bla
 | Print dialog on Windows and Linux | | **open**, manual | |
 | Print dialog: which Chrome versions | | **open**, manual | the dialog's window is unknown; the 107 to 108 window is for headless `page.pdf` only |
 | Firefox | 138.0.1, macOS, WebDriver `printPage` | done | NOT affected: all text printed |
-| Safari / WebKit | **open**, manual (section 3) | | |
+| Safari | 26.6 (21624.4.5.11.5), macOS 26, headed print dialog (File, Print) | done, by hand | NOT affected: the print preview shows `10.3.0`, `UNRELATED-INFLOW-TEXT`, and `UNRELATED-ABS-TEXT` for `repro.html` (from a `file://` URL). Only the preview was checked, not a saved PDF. No screenshot is in the repo (it shows the printer name). |
+| Other WebKit browsers | | **open** | not tested |
 | `Page.captureSnapshot` (MHTML) | not applicable | skipped | it saves markup and does not render |
 
 ## 2. Commands for the rows that are done

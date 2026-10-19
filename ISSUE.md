@@ -60,6 +60,8 @@ On screen both pages are identical, and the `cqh` text is 22.88px (13% of the 17
   128.0.6613.84 also printed correctly that way. So in a headed window the dialog and the DevTools call differ, and I do
   not know why.
 - **Firefox 138.0.1** (macOS, WebDriver `printPage`) is not affected: all text printed.
+- **Safari 26.6** (macOS 26, File, Print) is not affected: the print preview shows all the text for `repro.html`.
+  I checked the preview only, not a saved PDF.
 - **Other Chrome capture paths are correct:** `Page.captureScreenshot` (viewport and full page) and a screenshot with
   `Emulation.setEmulatedMedia` set to print. The print-media screenshot is identical to the screen screenshot, so print CSS
   alone does not cause it.
@@ -90,7 +92,7 @@ Every `Page.printToPDF` variant I tried is blank: default Letter, A4 landscape, 
 
 ## Not tested
 
-Chrome dev and canary, Edge, and Safari. The print dialog was tested by hand on one system (Chrome 155.0.8059.84, macOS
+Chrome dev and canary and Edge. The print dialog was tested by hand on one system (Chrome 155.0.8059.84, macOS
 26.6.1); Windows and Linux dialogs are untested. The Windows, Linux, and macOS CI runs above were headless only. Which
 older Chrome versions the print dialog is blank in is not known, so the 107 to 108 window above is for headless
 `page.pdf` only.
