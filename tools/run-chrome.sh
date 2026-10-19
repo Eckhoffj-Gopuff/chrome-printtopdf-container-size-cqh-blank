@@ -63,4 +63,16 @@ for f in "${files[@]}"; do urls+=("file://$(cd "$(dirname "$f")" && pwd)/$(basen
 echo "Opening: $app"
 echo "Profile: $profile (throwaway)"
 open -n "$app" --args --user-data-dir="$profile" --no-first-run --no-default-browser-check "${urls[@]}"
+
+# `open` returns success even if the app crashes a moment later. Check that it is still running.
+sleep 6
+if ! pgrep -f -- "--user-data-dir=$profile" >/dev/null; then
+  echo >&2
+  echo "The browser exited right after it started, so there is no window to test." >&2
+  echo "Older builds can crash or fail to draw on newer macOS. Example: a Chromium snapshot near 108 crashed on macOS 26.6.1" >&2
+  echo "(signal 11 at startup). Try a neighbouring version, or use Docker, which does not depend on your macOS:" >&2
+  echo "  tools/dialog-linux.sh <playwright-version> repro      # see COVERAGE.md" >&2
+  exit 1
+fi
 echo "Now press Cmd+P in the new window. Check chrome://version for the exact version."
+echo "If the window opens but stays blank, tell me the version and what you see; tools/dialog-linux.sh is a fallback."

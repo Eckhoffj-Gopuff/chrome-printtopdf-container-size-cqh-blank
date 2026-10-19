@@ -55,7 +55,7 @@ Chromium 107 and 108 both print. In a Linux container, 107 prints and 108 is bla
 | Linux version scan (Docker Desktop, Ubuntu 22.04 arm64, Playwright's Chromium) | 107.0.5304.18 prints; 108.0.5359.29, 109, 110, 114, 117, 120, 123, 125, 127.0.6533.17, 128.0.6613.18 blank | done | the Linux regression is between 107 and 108 |
 | **Regression range by position, Linux x64** (GitHub `ubuntu-latest`, Chromium snapshots, headless `page.pdf`, run 39272077921) | 1047731 good end, 1058933 bad end | done | **last good r1053680 (`54c0976669f2`), first bad r1053692 (`3af31e148c04`): 12 commits.** One of them is `06876550989f` "Set the LayoutNGPrinting feature to 'stable'." |
 | **LayoutNGPrinting feature flag** (Linux container, Playwright's Chromium) | 107 with `--enable-features=LayoutNGPrinting`; 108 and 127 with `--disable-features=LayoutNGPrinting` | done | 108 with the feature disabled **prints** (11,753 bytes; default 671). 107 with it enabled still prints. 127: no effect (still blank). On my physical Mac, 108 prints under every setting (cause unknown). |
-| Regression range by position (old headless, Chromium snapshots, macOS arm64) | 1316017 good, 1318290 bad | done, partial | a range of about 2,300 positions. Builds near 1317170 to 1317188 printed nothing here, so it is not one commit. Finish it with `bisect-builds.py` on a machine where they run. |
+| Regression range by position (old headless, Chromium snapshots, macOS arm64) | 1316017 good, 1318290 bad | done, partial | a range of about 2,300 positions. Builds near 1317170 to 1317188 printed nothing here, so it is not one commit. Finish it with `tools/position-bisect.cjs` on a Mac where they run (section 5). |
 | Chrome version, old headless (`--headless=old`) | 113.0.5672.63, 116.0.5845.96, 124.0.6367.207, 127.0.6533.119 | done | prints correctly |
 | Chrome version, old headless (`--headless=old`) | 128.0.6613.8, 128.0.6613.84 | done | BLANK |
 | Chrome version, chrome-headless-shell (Chrome for Testing) | 127.0.6533.119 | done | prints correctly (29,542 bytes, same as the control) |
@@ -75,8 +75,12 @@ Chromium 107 and 108 both print. In a Linux container, 107 prints and 108 is bla
 | `Page.printToPDF` options | Letter, A4 landscape, custom size, `scale`, `printBackground:false`, `preferCSSPageSize`, tagged + outline, `ReturnAsStream` | done | all 8 BLANK |
 | Other capture paths | `captureScreenshot` (viewport, full page), print-media emulation + screenshot | done | correct, identical to the control |
 | **Print dialog** (Ctrl/Cmd+P, Save as PDF), headed Chrome, macOS | Letter, portrait, margins None, scale Default, background graphics off; page served from `http://localhost:63342` | done, by hand | **BLANK preview for `repro.html`; the control's preview shows all the text.** Chrome 155.0.8059.84, macOS 26.6.1 (25G76). Same from a `file://` URL. **The saved PDF is blank too**: 960 bytes, 1 Letter page, Skia/PDF m155, no text, 0 non-white pixels. Evidence in `results/print-dialog-*`. |
-| Print dialog on Windows and Linux | | **open**, manual | |
-| Print dialog: which Chrome versions | | **open**, manual | the dialog's window is unknown; the 107 to 108 window is for headless `page.pdf` only |
+| **Print dialog on Linux, by version** (headed Chromium on Xvfb in Docker, Ubuntu 22.04 arm64, `tools/dialog-linux.sh`) | 107.0.5304.18, 108.0.5359.29, 127.0.6533.17, 156.0.8078.4; 108 with `--disable-features=LayoutNGPrinting`; 108 control | done | **107 shows the text; 108, 127, 156 are blank; 108 with the kill switch shows the text; the control shows the text.** Same boundary and same kill switch as headless `page.pdf`. Screenshots in `results/linux-dialog/`. |
+| Print dialog on Windows | | **open**, manual | |
+| Print dialog on older Chrome on macOS | 116, 124, 127 (Chrome for Testing), r1058960 (Chromium snapshot) | no data | on macOS 26.6.1 the snapshot crashes at startup (signal 11) and the Chrome for Testing builds were reported not to render. Use `tools/dialog-linux.sh` instead. |
+| **LayoutNGPrinting kill switch, by version** (Linux container, `--disable-features=LayoutNGPrinting`) | 108, 109, 110, 112 fix it; 114 and 127 do not (no effect) | done, partial | 113 and 115 to 125 not all tested yet (scan in progress when this was written). |
+| `LayoutNGPrinting` on 107 | `--enable-features=` and `--enable-blink-features=LayoutNGPrinting` | done | still prints: turning the feature on in 107 does not reproduce it |
+| What the print layout trips over | 10 variants of `repro.html`, Chromium 108 and 156 | done | `cqh` in any property in a size container is blank; `@container` queries on it print; one tall page is still blank; `@media print` overrides print. See `README.md`. |
 | Firefox | 138.0.1, macOS, WebDriver `printPage` | done | NOT affected: all text printed |
 | Safari | 26.6 (21624.4.5.11.5), macOS 26, headed print dialog (File, Print) | done, by hand | NOT affected: the print preview shows `10.3.0`, `UNRELATED-INFLOW-TEXT`, and `UNRELATED-ABS-TEXT` for `repro.html` (from a `file://` URL). Only the preview was checked, not a saved PDF. No screenshot is in the repo (it shows the printer name). |
 | Other WebKit browsers | | **open** | not tested |
@@ -147,13 +151,20 @@ the text for `repro-control.html`, from a `file://` URL and from `http://localho
 (960 bytes, 1 Letter page, no text, 0 non-white pixels). So the bug is not headless-only. A DevTools `Page.printToPDF`
 in a headed window printed correctly, so the dialog path and that call differ.
 
-Still missing, to make the report complete:
+**Linux, by version (done, automated):** `tools/dialog-linux.sh <playwright-version> <repro|repro-control>` runs a headed
+Chromium on a virtual display in Docker, presses Ctrl+P, and screenshots the dialog into `results/linux-dialog/`. The dialog
+shows the text on Chromium 107.0.5304.18 and is blank on 108.0.5359.29, 127.0.6533.17, and 156.0.8078.4, the same boundary as
+headless `page.pdf`. Use it for any other Playwright version (1.27.1 is Chromium 107, 1.28.1 is 108, 1.45.2 is 127). It does
+not depend on your macOS.
 
-- The same test on older Chrome builds, to find where the dialog starts failing. The headless window is 107 to 108; the
-  dialog's window may differ. Use `tools/run-chrome.sh` (below), which does not touch your normal Chrome.
-- The same test on Windows and Linux.
+Still missing:
 
-**Trying an older Chrome without touching your normal one**
+- The print dialog on Windows.
+- The print dialog on older Chrome on macOS. Old builds do not work reliably on macOS 26 (a Chromium snapshot near 108 crashed
+  at startup; Chrome for Testing 116, 124, and 127 were reported not to render), so that row is "no data". The Docker route
+  above covers the versions.
+
+**Trying an older Chrome on macOS, without touching your normal one** (works only for builds that start on your macOS)
 
 ```sh
 tools/run-chrome.sh 127.0.6533.119     # a Chrome for Testing build, versions 113 and later

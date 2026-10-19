@@ -1,0 +1,6 @@
+# Playwright's image (browsers and their libraries) plus a virtual display and a keyboard tool, so a headed Chromium
+# can open the print dialog and be screenshotted. Built on first use by tools/dialog-linux.sh.
+FROM mcr.microsoft.com/playwright:v1.45.2-jammy
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends xvfb xdotool imagemagick \
+ && rm -rf /var/lib/apt/lists/*

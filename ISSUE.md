@@ -41,12 +41,15 @@ On screen both pages are identical, and the `cqh` text is 22.88px (13% of the 17
   https://chromium.googlesource.com/chromium/src/+log/54c0976669f28779ae1f9c0d7e66c7657c49469e..3af31e148c049854a63e6e831aca5862ac98fd09
   One commit in that range is about printing: `06876550989f` **"Set the LayoutNGPrinting feature to 'stable'."**
   (2022-09-30). The others are unrelated rolls and UI changes.
-- **With LayoutNGPrinting disabled, Chromium 108 prints correctly.** Linux container, Playwright's Chromium
-  108.0.5359.29: default 671 bytes (blank), `--disable-features=LayoutNGPrinting` **11,753 bytes, all content**. So the
-  failure is in the LayoutNG print path that became the default in 108. I did not diagnose it further. Checks that did
-  not reproduce it: Chromium 107 with `--enable-features=LayoutNGPrinting` still printed (11,765 bytes), so enabling the
-  feature alone may not be enough there; and Chromium 127 with `--disable-features=LayoutNGPrinting` stayed blank (847
-  bytes), so the flag has no effect any more by then.
+- **The LayoutNG print path is the cause area.** The commit in the range, `06876550989f` "Set the LayoutNGPrinting feature to
+  'stable'." (Bug: 1121942, Cr-Commit-Position #1053686), only turns the existing LayoutNG print code on by default and
+  adds a base feature as a kill switch. With the kill switch, `--disable-features=LayoutNGPrinting` (Linux container,
+  Playwright's Chromium, headless `page.pdf`):
+  108.0.5359.29 **prints** (11,753 bytes; default 671 = blank), 109.0.5414.46 prints, 110.0.5481.38 prints,
+  112.0.5615.29 prints (11,570), and 114.0.5735.35 is **still blank** (672), as is 127.0.6533.17 (847). So the kill switch
+  works on 108 to 112 and has no effect by 114 (113 not tested). I did not find the defect itself.
+  `--enable-blink-features=LayoutNGPrinting` on Chromium 107 did **not** reproduce it (11,765 bytes), so turning that
+  feature on is not the whole change.
 - **My physical Mac is the exception.** There, old headless prints correctly until Chrome 128 (below). Chrome for Testing
   127.0.6533.119 headless shell prints on that Mac and is blank on the four runners and in the container. I do not know
   why. These did not change the result: CPU count, timing, viewport, device scale factor, locale, fonts, and GPU-related
@@ -72,6 +75,13 @@ On screen both pages are identical, and the `cqh` text is 22.88px (13% of the 17
   Playwright script: 16,886 bytes with all text headed, 974 bytes headless. Headed Chrome for Testing 127.0.6533.119 and
   128.0.6613.84 also printed correctly that way. So in a headed window the dialog and the DevTools call differ, and I do
   not know why.
+- **The print dialog has the same version boundary on Linux.** Headed Chromium on a virtual display in Docker (Ubuntu 22.04
+  arm64, Ctrl+P, destination Save as PDF; `tools/dialog-linux.sh`; screenshots in `results/linux-dialog/`): for
+  `repro.html`, Chromium **107.0.5304.18 shows the text** (the `10.3.0` is much larger than on screen, as old print layout
+  resolved `cqh`), **108.0.5359.29 is blank** (only the date, title and URL that Chrome adds), **127.0.6533.17 is blank**, and
+  **156.0.8078.4 is blank**. `repro-control.html` shows all the text on 108. Chromium 108 with
+  `--disable-features=LayoutNGPrinting` shows the text again. So the dialog and `page.pdf` fail on the same builds and the
+  same kill switch fixes both.
 - **Firefox 138.0.1** (macOS, WebDriver `printPage`) is not affected: all text printed.
 - **Safari 26.6** (macOS 26, File, Print) is not affected: the print preview shows all the text for `repro.html`.
   I checked the preview only, not a saved PDF.
@@ -85,6 +95,27 @@ On screen both pages are identical, and the `cqh` text is 22.88px (13% of the 17
   `cqw` prints. `cqb` and `cqmin` are blank. `container-type: inline-size` and `contain: size` print.
 - Removing the `position: relative` ancestor, or removing `position: absolute` from the box, makes the content print.
 - The box height does not matter (100px and 400px are still blank).
+
+More experiments, one change at a time from `repro.html`. The result is the same on Chromium 108.0.5359.29 and
+156.0.8078.4 (Linux, headless `page.pdf`):
+
+| Change | Result |
+|---|---|
+| none (`13cqh` font size, `container-type: size`) | blank |
+| one very tall page (583x6000 px), so nothing is split across pages | blank |
+| fixed font size, but `height: 13cqh` on the text block | blank |
+| fixed font size, but `width: 10cqh` on the text block | blank |
+| fixed font size, plus `@container (min-height: 1px) { .text { color: red } }` | prints |
+| fixed font size, plus an `@container (min-height: 9999px)` rule that does not match | prints |
+| `@media print { .container { container-type: normal } .text { font-size: 22.88px } }` | prints |
+| `@media print { .text { font-size: 22.88px } }`, `container-type: size` kept | prints |
+| `@media print { .container { container-type: inline-size } }`, `cqh` kept | prints |
+| `@media print { .container { container-type: normal } }`, `cqh` kept | prints |
+
+So it is the block-axis container query **unit** (`cqh`), in any property, inside a `container-type: size` element. Container
+**queries** (`@container (min-height: …)`) on the same container print correctly, and it is not about the page being split
+across pages. A print-only CSS override avoids it (for example `@media print` with a fixed size, or `container-type:
+inline-size`), which also shows `@media print` rules are applied.
 
 ## Environment
 
@@ -127,4 +158,5 @@ correct. This is a report of the behavior. I do not know the cause.
 `results/print-dialog-repro.png` (blank preview, page served from localhost),
 `results/print-dialog-repro-file-url.png` (blank preview, `file://` URL),
 `results/print-dialog-control.png` (preview with text), and `results/print-dialog-repro.saved.chrome-155.pdf`
-(the PDF saved from the dialog, blank).
+(the PDF saved from the dialog, blank). Linux print dialog screenshots by Chromium version are in `results/linux-dialog/`
+(107 text, 108 blank, 108 with the kill switch text, 108 control text, 127 blank, 156 blank).

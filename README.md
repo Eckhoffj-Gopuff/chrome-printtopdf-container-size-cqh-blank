@@ -113,13 +113,45 @@ that the two ends behave as expected, then bisects (it took about 90 seconds).
 |---|---|---|---|
 | 107.0.5304.18 | none | 11,765 (prints) | 11,779 |
 | 107.0.5304.18 | `--enable-features=LayoutNGPrinting` | 11,765 (still prints) | 11,779 |
+| 107.0.5304.18 | `--enable-blink-features=LayoutNGPrinting` (the runtime feature) | 11,765 (still prints) | 11,779 |
 | 108.0.5359.29 | none | **671 (blank)** | 11,767 |
 | 108.0.5359.29 | `--disable-features=LayoutNGPrinting` | **11,753 (prints)** | 11,767 |
+| 109.0.5414.46, 110.0.5481.38 | none / `--disable-features=LayoutNGPrinting` | 671 (blank) / **11,753 (prints)** | 11,767 |
+| 112.0.5615.29 | none / `--disable-features=LayoutNGPrinting` | 671 (blank) / **11,570 (prints)** | 11,841 / 11,585 |
+| 114.0.5735.35 | none, and `--disable-features=LayoutNGPrinting` | 672 (blank both) | 11,842 |
 | 127.0.6533.17 | none, and `--disable-features=LayoutNGPrinting` | 847 (blank both) | 10,233 |
 
-So the blank comes from the LayoutNG print layout that became the default in Chrome 108. Enabling it on 107 was not enough to
-reproduce, so it may depend on other features. On 127 the flag no longer changes anything. I did not diagnose the cause. On my
-physical Mac, Chromium 108 prints under every setting of this flag, which I cannot explain.
+The change in the bisect range is `06876550989f` "Set the LayoutNGPrinting feature to 'stable'." (Bug: 1121942, commit position
+#1053686). It turns the existing LayoutNG print code on by default and adds a base feature as a kill switch. So the blank comes
+from the LayoutNG print layout that became the default in Chrome 108. The kill switch works on 108 to 112 and has no effect by
+114 (113 not tested). Turning the feature on in 107, by either switch, did not reproduce it, so it may depend on other changes.
+I did not diagnose the defect. On my physical Mac, Chromium 108 prints under every setting of this flag, which I cannot explain.
+
+**What the print layout trips over** (Linux container; identical results on Chromium 108.0.5359.29 and 156.0.8078.4; headless
+`page.pdf`). One change at a time from `repro.html`:
+
+| Change | Result |
+|---|---|
+| none (`13cqh` font size, `container-type: size`) | blank |
+| one very tall page (583x6000 px), so nothing is split across pages | blank |
+| fixed font size, but `height: 13cqh` on the text block | blank |
+| fixed font size, but `width: 10cqh` on the text block | blank |
+| fixed font size, plus `@container (min-height: 1px) { … }` | prints |
+| fixed font size, plus a non-matching `@container (min-height: 9999px) { … }` | prints |
+| `@media print { .container { container-type: normal } .text { font-size: 22.88px } }` | prints |
+| `@media print { .text { font-size: 22.88px } }`, `container-type: size` kept | prints |
+| `@media print { .container { container-type: inline-size } }`, `cqh` kept | prints |
+| `@media print { .container { container-type: normal } }`, `cqh` kept | prints |
+
+So it is the block-axis container query **unit** (`cqh`), used in any property, inside a `container-type: size` element.
+Container **queries** on the same element print correctly. It is not about splitting across pages (the tall page is blank
+too). A print-only CSS override avoids it, which also shows `@media print` rules apply in this path.
+
+**The print dialog on Linux** (headed Chromium on a virtual display in Docker; `tools/dialog-linux.sh`; screenshots in
+`results/linux-dialog/`): the preview for `repro.html` shows the text on Chromium **107.0.5304.18** (the `10.3.0` is much larger
+than on screen, because old print layout resolved `cqh` differently) and is **blank** on **108.0.5359.29**, **127.0.6533.17**, and
+**156.0.8078.4**. `repro-control.html` shows all the text on 108. Chromium 108 with `--disable-features=LayoutNGPrinting` shows
+the text again. So the print dialog and `page.pdf` fail on the same builds, and the same kill switch fixes both.
 
 **macOS 26 arm64, physical machine** (`Page.printToPDF` command line):
 
@@ -143,7 +175,7 @@ https://chromium.googlesource.com/chromium/src/+log/57d31eae8e4eca52fc106402dec5
 
 It is a range, not one commit. Many snapshot builds between the two (for example 1317170 to 1317188 and 1316032
 to 1316043) printed nothing on my machine, even for the control, so the search could not go further here.
-Someone with a machine where those builds run can finish it with `bisect-builds.py` (see `COVERAGE.md`).
+Someone with a Mac where those builds run can finish it with `tools/position-bisect.cjs` (see `COVERAGE.md`, section 5).
 
 ## The whole page is blank, not only the `cqh` text
 
