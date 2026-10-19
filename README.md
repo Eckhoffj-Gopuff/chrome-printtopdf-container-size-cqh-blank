@@ -1,5 +1,7 @@
 # Chrome prints a blank page: `cqh` inside `container-type: size`
 
+**Chromium issue: https://issues.chromium.org/issues/575293872** (filed 2026-10-19).
+
 Chrome prints nothing for `repro.html`: no text, no background colors, and no unrelated elements. This happens in
 **headless** Chrome (`Page.printToPDF`) and in the **headed Chrome print dialog on macOS and Linux** (Ctrl/Cmd+P, the preview is blank). The Windows print dialog
 (Chrome and Edge 155) shows the text.

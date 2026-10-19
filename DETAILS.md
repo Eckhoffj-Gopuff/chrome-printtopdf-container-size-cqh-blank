@@ -1,5 +1,7 @@
 # Detailed findings
 
+Chromium issue: https://issues.chromium.org/issues/575293872 (filed 2026-10-19).
+
 The long form of the bug report. The short text for the Chromium tracker is `ISSUE.md`. This file holds every version,
 byte count, and run that the short text summarizes. `COVERAGE.md` is the test matrix and process. `CHROMIUM-SOURCE-NOTES.md`
 is the read-through of the Chromium commits.

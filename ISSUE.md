@@ -1,6 +1,8 @@
-# Chromium bug report text (not filed)
+# Chromium bug report text
 
-For https://issues.chromium.org. Component suggestion: Blink>Layout (the reporter should choose). Paste the text below
+**Filed 2026-10-19: https://issues.chromium.org/issues/575293872** (Blink>Layout). The text below is what was filed, except that the one-line summary was shortened to the tracker's 100-character limit: "Blank printed page: cqh inside container-type: size under an abspos box (LayoutNG print layout)". The tracker's "Chrome version" field was auto-filled with 152.0.7977.149 (the reporting browser); the reproduction versions are in the text.
+
+Filed at https://issues.chromium.org. Component suggestion: Blink>Layout (the reporter should choose). Paste the text below
 the line. Every version, byte count, and run behind it is in `DETAILS.md` in the repro repository; the test matrix is in `COVERAGE.md`.
 
 ---
