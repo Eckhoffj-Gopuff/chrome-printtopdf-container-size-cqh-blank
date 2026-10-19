@@ -4,7 +4,7 @@ File at https://issues.chromium.org. Component suggestion: Blink>Layout or Blink
 Printing if the form offers it. The reporter should choose. Do not file until `COVERAGE.md` has no open row
 that the text below depends on.
 
-**Title:** Printing (print dialog and headless Page.printToPDF) produces an entirely blank page when a descendant uses `cqh` inside `container-type: size` under an absolutely positioned box
+**Title:** Printing (headless Page.printToPDF, and the print dialog on macOS and Linux) produces an entirely blank page when a descendant uses `cqh` inside `container-type: size` under an absolutely positioned box
 
 ## Summary
 
@@ -12,8 +12,9 @@ that the text below depends on.
 - **Trigger:** a `cqh` unit (also `cqb`, `cqmin`) used in any property inside a `container-type: size` element, with an
   absolutely positioned box inside a `position: relative` ancestor. `cqw`, `container-type: inline-size`, and `@container`
   queries do not trigger it.
-- **Affected:** the print dialog (Chrome 155 on macOS; Chromium 108, 127, 156 on Linux) and headless `Page.printToPDF`
-  (Chromium 108 to 156 on Linux, Windows, and macOS CI runners). Not affected: Firefox 138, Safari 26.6 (preview only).
+- **Affected:** headless `Page.printToPDF` (Chromium 108 to 156 on Linux, Windows, and macOS CI runners) and the print dialog
+  on macOS (Chrome 155) and Linux (Chromium 108, 127, 156). Not affected: the print dialog on Windows (Chrome 155 and Edge
+  155 show all the text), Firefox 138, Safari 26.6 (preview only). So on Windows the dialog and headless output differ.
 - **Regression:** Chromium 107.0.5304.18 prints correctly and 108.0.5359.29 is blank, on all four GitHub-hosted runners.
   A Linux position bisect gives 12 commits (r1053680 to r1053692), including `06876550989f` "Set the LayoutNGPrinting
   feature to 'stable'." `--disable-features=LayoutNGPrinting` fixes 108 to 113 and has no effect from 114.
@@ -23,7 +24,7 @@ that the text below depends on.
 ## Steps to reproduce
 
 1. Download `repro.html` and `repro-control.html` from https://github.com/Eckhoffj-Gopuff/chrome-printtopdf-container-size-cqh-blank
-2. Print dialog: open `repro.html` in Chrome, press Ctrl/Cmd+P, destination "Save as PDF". The preview is blank.
+2. Print dialog (macOS and Linux; on Windows it shows the text): open `repro.html` in Chrome, press Ctrl/Cmd+P, destination "Save as PDF". The preview is blank.
 3. Headless: `chrome --headless --no-pdf-header-footer --print-to-pdf=out.pdf file:///path/to/repro.html`, then
    `pdftotext out.pdf -` (or open `out.pdf`).
 4. Repeat with `repro-control.html`. It differs only by `font-size: 22.88px` in place of `font-size: 13cqh`.
@@ -91,6 +92,11 @@ On screen both pages are identical, and the `cqh` text is 22.88px (13% of the 17
   Playwright script: 16,886 bytes with all text headed, 974 bytes headless. Headed Chrome for Testing 127.0.6533.119 and
   128.0.6613.84 also printed correctly that way. So in a headed window the dialog and the DevTools call differ, and I do
   not know why.
+- **The print dialog is NOT affected on Windows.** Chrome 155.0.8059.84 (printer "Power PDF", preview shows `10.3.0`,
+  `UNRELATED-INFLOW-TEXT`, `UNRELATED-ABS-TEXT`) and Microsoft Edge 155.0.4283.62 (Save as PDF; the same text and the red
+  box), both from a `file://` URL. The Windows version was not recorded, and I did not save a PDF. The Windows CI runner
+  (headless `page.pdf`) is blank, so on Windows the dialog and headless output differ, as on macOS the dialog and a headed
+  DevTools call differ. Screenshots: `results/print-dialog-windows-*`.
 - **The print dialog has the same version boundary on Linux.** Headed Chromium on a virtual display in Docker (Ubuntu 22.04
   arm64, Ctrl+P, destination Save as PDF; `tools/dialog-linux.sh`; screenshots in `results/linux-dialog/`): for
   `repro.html`, Chromium **107.0.5304.18 shows the text** (the `10.3.0` is much larger than on screen, so `cqh` did not
@@ -156,7 +162,7 @@ Every `Page.printToPDF` variant I tried is blank: default Letter, A4 landscape, 
 
 ## Not tested
 
-Chrome dev and canary, Edge, and the print dialog on Windows. The CI runs above were headless only. The dialog was
+Chrome dev and canary, and Edge in headless mode (Edge was checked only in the Windows print dialog). The CI runs above were headless only. The dialog was
 tested by hand in Chrome 155.0.8059.84 on macOS 26.6.1, and by script in Chromium 107, 108, 127, and 156 on Linux
 (arm64 container, virtual display); older Chrome on a macOS dialog could not be run (the builds crash or do not render on
 macOS 26). The position bisect covers old headless on Linux x64 (and, separately, my physical Mac, for its Chrome 128
@@ -177,6 +183,6 @@ correct. This is a report of the behavior. I do not know the cause.
 (how Chrome renders it on screen), and the print-dialog evidence from Chrome 155.0.8059.84 on macOS:
 `results/print-dialog-repro.png` (blank preview, page served from localhost),
 `results/print-dialog-repro-file-url.png` (blank preview, `file://` URL),
-`results/print-dialog-control.png` (preview with text), and `results/print-dialog-repro.saved.chrome-155.pdf`
+`results/print-dialog-control.png` (preview with text), `results/print-dialog-windows-chrome-155.png` and `results/print-dialog-windows-edge-155.webp` (Windows previews, both show the text), and `results/print-dialog-repro.saved.chrome-155.pdf`
 (the PDF saved from the dialog, blank). Linux print dialog screenshots by Chromium version are in `results/linux-dialog/`
 (107 text, 108 blank, 108 with the kill switch text, 108 control text, 127 blank, 156 blank).

@@ -71,12 +71,12 @@ Chromium 107 and 108 both print. In a Linux container, 107 prints and 108 is bla
 | Chrome channel | beta (157.0.8103.6) | done, CI | BLANK on Linux, Windows, and both Macs |
 | Chrome channel | dev | no data | `npx playwright install chrome-dev` did not give a usable binary on any of the four runners (launch error: distribution not found). Not a pass. |
 | Chrome channel | canary | **open** | not in the workflow |
-| Microsoft Edge | stable | **open**, CI | |
+| Microsoft Edge | stable | partial | print dialog on Windows: not affected (row above). Headless: **open**, CI. |
 | `Page.printToPDF` options | Letter, A4 landscape, custom size, `scale`, `printBackground:false`, `preferCSSPageSize`, tagged + outline, `ReturnAsStream` | done | all 8 BLANK |
 | Other capture paths | `captureScreenshot` (viewport, full page), print-media emulation + screenshot | done | correct, identical to the control |
 | **Print dialog** (Ctrl/Cmd+P, Save as PDF), headed Chrome, macOS | Letter, portrait, margins None, scale Default, background graphics off; page served from `http://localhost:63342` | done, by hand | **BLANK preview for `repro.html`; the control's preview shows all the text.** Chrome 155.0.8059.84, macOS 26.6.1 (25G76). Same from a `file://` URL. **The saved PDF is blank too**: 960 bytes, 1 Letter page, Skia/PDF m155, no text, 0 non-white pixels. Evidence in `results/print-dialog-*`. |
 | **Print dialog on Linux, by version** (headed Chromium on Xvfb in Docker, Ubuntu 22.04 arm64, `tools/dialog-linux.sh`) | 107.0.5304.18, 108.0.5359.29, 127.0.6533.17, 156.0.8078.4; 108 with `--disable-features=LayoutNGPrinting`; 108 control | done | **107 shows the text; 108, 127, 156 are blank; 108 with the kill switch shows the text; the control shows the text.** Same boundary and same kill switch as headless `page.pdf`. Screenshots in `results/linux-dialog/`. |
-| Print dialog on Windows | | **open**, manual | |
+| Print dialog on Windows | Chrome 155.0.8059.84 (printer "Power PDF"), Microsoft Edge 155.0.4283.62 (Save as PDF); `file://` | done, by hand | **NOT affected: both previews show all the text** (`10.3.0`, both UNRELATED lines, the red box). Windows version not recorded; no PDF saved. Differs from the Windows CI headless result (BLANK). Screenshots: `results/print-dialog-windows-*`. |
 | Print dialog on older Chrome on macOS | 116, 124, 127 (Chrome for Testing), r1058960 (Chromium snapshot) | no data | on macOS 26.6.1 the snapshot crashes at startup (signal 11) and the Chrome for Testing builds were reported not to render. Use `tools/dialog-linux.sh` instead. |
 | **LayoutNGPrinting kill switch, by version** (Linux container, `--disable-features=LayoutNGPrinting`) | 108, 109, 110, 112, 113 fix it; 114, 115, 117, 120, 123, 125, 127, 128 do not (no effect) | done | 111, 116, 118, 119, 121, 122, 124, 126 not tested. The cutoff is between 113 and 114. |
 | `LayoutNGPrinting` on 107 | `--enable-features=` and `--enable-blink-features=LayoutNGPrinting` | done | still prints: turning the feature on in 107 does not reproduce it |
@@ -159,7 +159,7 @@ not depend on your macOS.
 
 Still missing:
 
-- The print dialog on Windows.
+- The print dialog on Windows with an older Chrome, and a saved PDF there.
 - The print dialog on older Chrome on macOS. Old builds do not work reliably on macOS 26 (a Chromium snapshot near 108 crashed
   at startup; Chrome for Testing 116, 124, and 127 were reported not to render), so that row is "no data". The Docker route
   above covers the versions.

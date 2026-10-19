@@ -1,7 +1,8 @@
 # Chrome prints a blank page: `cqh` inside `container-type: size`
 
 Chrome prints nothing for `repro.html`: no text, no background colors, and no unrelated elements. This happens in
-**headless** Chrome (`Page.printToPDF`) and in the **headed Chrome print dialog** (Ctrl/Cmd+P, the preview is blank).
+**headless** Chrome (`Page.printToPDF`) and in the **headed Chrome print dialog on macOS and Linux** (Ctrl/Cmd+P, the preview is blank). The Windows print dialog
+(Chrome and Edge 155) shows the text.
 The page renders correctly on screen and in screenshots. Firefox prints it correctly.
 `repro-control.html` is the same page with a fixed font size instead of `13cqh`. It prints correctly everywhere.
 
@@ -55,6 +56,8 @@ screenshot of the page as Chrome shows it.
 | Google Chrome 155.0.8059.85, Chrome beta 157.0.8103.6, Chromium 156.0.8078.4 (GitHub Actions) | macOS, arm64 | 960 / 960 / 839 bytes | 15,654 / 15,656 / 15,533 bytes |
 | Google Chrome 155.0.8059.84, headed, raw DevTools `Page.printToPDF` | macOS 26, arm64 | 16,886 bytes, all text (**not** blank) | 16,886 bytes |
 | **Google Chrome 155.0.8059.84, headed, print dialog (Ctrl/Cmd+P, Save as PDF, Letter, portrait)** | macOS 26.6.1 (25G76); opened from `http://localhost:63342` and from a `file://` URL, same result | **blank preview; the saved PDF is blank** (960 bytes, 1 Letter page, no text, 0 non-white pixels) | preview shows all the text |
+| **Google Chrome 155.0.8059.84, print dialog (Windows, version not recorded, `file://`)** | Windows | **text shown (not affected)** | not checked |
+| **Microsoft Edge 155.0.4283.62, print dialog (Save as PDF)** | Windows | **text shown (not affected)** | not checked |
 | Firefox 138.0.1, WebDriver `printPage` | macOS 26, arm64 | 12,624 bytes, all text | 12,625 bytes |
 | Safari 26.6 (21624.4.5.11.5), print dialog preview | macOS 26 | **all text shown (not affected)** | not checked |
 
@@ -233,7 +236,7 @@ See `COVERAGE.md` for the full list and the steps. At the time of writing:
 - The cause inside LayoutNG printing. The Linux bisect gives a 12-commit range and a feature flag that fixes 108, but
   not the defect itself. The bisect covers old headless on Linux x64, not new headless or the print dialog.
 - The print dialog was tested by hand in Chrome 155.0.8059.84 on macOS 26.6.1, and by script on Linux (Chromium 107,
-  108, 127, 156). The Windows dialog and older Chrome in the macOS dialog are untested.
+  108, 127, 156). The Windows dialog (Chrome and Edge 155) was tested by hand and shows the text. Older Chrome in the macOS dialog is untested.
 - WebKit browsers other than Safari 26.6 on macOS, and Safari on other systems.
 - Why it happens. This is a report of the behavior, not a diagnosis.
 
