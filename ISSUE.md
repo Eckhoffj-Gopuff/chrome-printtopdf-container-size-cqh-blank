@@ -50,10 +50,11 @@ On screen both pages are identical, and the `cqh` text is 22.88px (13% of the 17
 - **New headless is blank** on 124.0.6367.207, 127.0.6533.119, 155.0.8059.84, and on Linux Chromium 133. Builds 113, 116,
   120, and 128 did not run on my machine (they hang or crash, also for the control), so I do not know where new headless
   started.
-- **The headed print dialog IS affected.** In a headed Chrome on macOS (version not yet recorded), the print preview
-  (Ctrl/Cmd+P, destination Save as PDF, Letter, portrait, margins None, scale Default, 1 page) is **blank for
-  `repro.html`** and shows all the text for `repro-control.html`. The page was served from `http://localhost:63342`.
-  So this is not headless-only. Screenshots of both previews are attached.
+- **The headed print dialog IS affected.** In headed Chrome 155.0.8059.84 on macOS 26.6.1 (25G76), the print preview
+  (Ctrl/Cmd+P, destination Save as PDF, Letter, portrait, 1 page) is **blank for `repro.html`** and shows all the text for
+  `repro-control.html`. It is the same when the page is opened from a `file://` URL and from `http://localhost:63342`.
+  **The saved PDF is blank too**: 960 bytes, one Letter page, producer Skia/PDF m155, no extractable text, 0 non-white
+  pixels. So this is not headless-only. Screenshots and the saved PDF are attached.
 - **A DevTools `Page.printToPDF` in a headed window printed correctly.** The same Chrome 155.0.8059.84 build, file, and
   Playwright script: 16,886 bytes with all text headed, 974 bytes headless. Headed Chrome for Testing 127.0.6533.119 and
   128.0.6613.84 also printed correctly that way. So in a headed window the dialog and the DevTools call differ, and I do
@@ -89,10 +90,10 @@ Every `Page.printToPDF` variant I tried is blank: default Letter, A4 landscape, 
 
 ## Not tested
 
-Chrome dev and canary, Edge, and Safari. The print dialog was tested once, by hand, on macOS: the Chrome version,
-the saved PDF, and a `file://` URL are not recorded, and Windows and Linux dialogs are untested. The Windows, Linux, and
-macOS CI runs above were headless only. Which Chrome versions the print dialog is blank in is not known, so the
-107 to 108 window above is for headless `page.pdf` only.
+Chrome dev and canary, Edge, and Safari. The print dialog was tested by hand on one system (Chrome 155.0.8059.84, macOS
+26.6.1); Windows and Linux dialogs are untested. The Windows, Linux, and macOS CI runs above were headless only. Which
+older Chrome versions the print dialog is blank in is not known, so the 107 to 108 window above is for headless
+`page.pdf` only.
 The commit range inside the 107 to 108 change is not narrowed (the position bisect I ran was on my physical Mac, for
 the Chrome 128 boundary there). I did not bisect new headless.
 
@@ -106,5 +107,8 @@ correct. This is a report of the behavior. I do not know the cause.
 
 `repro.html`, `repro-control.html`, `results/repro.chrome-155-new-headless.pdf` (blank),
 `results/repro-control.chrome-155-new-headless.pdf` (correct), `results/repro.screen-chrome-155.png`
-(how Chrome renders it on screen), and the two print-dialog screenshots `results/print-dialog-repro.png` (blank
-preview) and `results/print-dialog-control.png` (preview with text). The two dialog screenshots are not in the repo yet.
+(how Chrome renders it on screen), and the print-dialog evidence from Chrome 155.0.8059.84 on macOS:
+`results/print-dialog-repro.png` (blank preview, page served from localhost),
+`results/print-dialog-repro-file-url.png` (blank preview, `file://` URL),
+`results/print-dialog-control.png` (preview with text), and `results/print-dialog-repro.saved.chrome-155.pdf`
+(the PDF saved from the dialog, blank).

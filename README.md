@@ -54,7 +54,7 @@ screenshot of the page as Chrome shows it.
 | Google Chrome 155.0.8059.85, Chrome beta 157.0.8103.6, Chromium 156.0.8078.4 (GitHub Actions) | macOS 15, x64 (Intel) | 960 / 960 / 839 bytes | 15,654 / 15,656 / 15,533 bytes |
 | Google Chrome 155.0.8059.85, Chrome beta 157.0.8103.6, Chromium 156.0.8078.4 (GitHub Actions) | macOS, arm64 | 960 / 960 / 839 bytes | 15,654 / 15,656 / 15,533 bytes |
 | Google Chrome 155.0.8059.84, headed, raw DevTools `Page.printToPDF` | macOS 26, arm64 | 16,886 bytes, all text (**not** blank) | 16,886 bytes |
-| **Google Chrome, headed, print dialog (Ctrl/Cmd+P, Save as PDF, Letter, portrait, margins None)** | macOS (Chrome version not yet recorded; page served from `http://localhost:63342`) | **blank preview** | preview shows all the text |
+| **Google Chrome 155.0.8059.84, headed, print dialog (Ctrl/Cmd+P, Save as PDF, Letter, portrait)** | macOS 26.6.1 (25G76); opened from `http://localhost:63342` and from a `file://` URL, same result | **blank preview; the saved PDF is blank** (960 bytes, 1 Letter page, no text, 0 non-white pixels) | preview shows all the text |
 | Firefox 138.0.1, WebDriver `printPage` | macOS 26, arm64 | 12,624 bytes, all text | 12,625 bytes |
 
 The same Chrome 155 build, file, and script give 16,886 bytes for a DevTools `Page.printToPDF` in a headed window
@@ -109,7 +109,8 @@ page prints 666 to 887 bytes, and a blank `repro.html` is within 100 bytes of th
 
 So on this Mac, old headless and chrome-headless-shell first fail in Chrome 128, and new headless is blank in the
 oldest build that runs here (124). A DevTools `Page.printToPDF` in a headed window printed correctly on 127, 128,
-and 155, but that is not the print dialog, which is blank (version not yet recorded).
+and 155, but that is not the print dialog, which is blank in Chrome 155.0.8059.84. The dialog has not been tried on
+older builds yet (`tools/run-chrome.sh` opens one beside your normal Chrome).
 
 **Position bisect (macOS 26 arm64 physical machine, old headless, `--headless=old`, Chromium snapshot builds):** the last build that
 prints correctly is position 1316017 (`57d31eae8e4e`, both files 29,540 bytes). The first build that blanks is
@@ -176,9 +177,8 @@ See `COVERAGE.md` for the full list and the steps. At the time of writing:
   `chrome-beta` channels, Chrome for Testing 127, and Chromium 107 and 108. Headed Chrome was tested only on my Mac.
 - The exact commit range for the 107 to 108 change. It is one Chrome milestone, not yet a commit range, on any
   platform. A position bisect on Linux is the next step.
-- The print dialog was tested once, by hand, on macOS. The Chrome version, the saved PDF's contents, and a `file://`
-  URL (the page was served from `localhost:63342`) are not recorded yet. Windows and Linux print dialogs are untested.
-  Which Chrome versions the dialog is blank in is not known.
+- The print dialog was tested by hand on one system: Chrome 155.0.8059.84 on macOS 26.6.1. Windows and Linux print
+  dialogs are untested. Which older Chrome versions the dialog is blank in is not known.
 - Safari and other WebKit browsers.
 - Why it happens. This is a report of the behavior, not a diagnosis.
 

@@ -72,7 +72,7 @@ Chromium 107 and 108 both print. In a Linux container, 107 prints and 108 is bla
 | Microsoft Edge | stable | **open**, CI | |
 | `Page.printToPDF` options | Letter, A4 landscape, custom size, `scale`, `printBackground:false`, `preferCSSPageSize`, tagged + outline, `ReturnAsStream` | done | all 8 BLANK |
 | Other capture paths | `captureScreenshot` (viewport, full page), print-media emulation + screenshot | done | correct, identical to the control |
-| **Print dialog** (Ctrl/Cmd+P, Save as PDF), headed Chrome, macOS | Letter, portrait, margins None, scale Default, background graphics off; page served from `http://localhost:63342` | done once, by hand | **BLANK preview for `repro.html`; the control's preview shows all the text.** Chrome version, the saved PDF, and a `file://` URL are **not recorded yet**. |
+| **Print dialog** (Ctrl/Cmd+P, Save as PDF), headed Chrome, macOS | Letter, portrait, margins None, scale Default, background graphics off; page served from `http://localhost:63342` | done, by hand | **BLANK preview for `repro.html`; the control's preview shows all the text.** Chrome 155.0.8059.84, macOS 26.6.1 (25G76). Same from a `file://` URL. **The saved PDF is blank too**: 960 bytes, 1 Letter page, Skia/PDF m155, no text, 0 non-white pixels. Evidence in `results/print-dialog-*`. |
 | Print dialog on Windows and Linux | | **open**, manual | |
 | Print dialog: which Chrome versions | | **open**, manual | the dialog's window is unknown; the 107 to 108 window is for headless `page.pdf` only |
 | Firefox | 138.0.1, macOS, WebDriver `printPage` | done | NOT affected: all text printed |
@@ -139,15 +139,33 @@ To add Edge, add `msedge` to the `target` list. To test an exact Chrome build on
 
 ### Print from the Chrome UI (Ctrl/Cmd+P)
 
-**Result so far (macOS, by hand):** the preview is **blank for `repro.html`** and shows all the text for
-`repro-control.html`, so the bug is not headless-only. A DevTools `Page.printToPDF` in a headed window printed correctly,
-so the dialog path and that call differ. What is still missing, to make the report complete:
+**Result so far (Chrome 155.0.8059.84, macOS 26.6.1, by hand):** the preview is **blank for `repro.html`** and shows all
+the text for `repro-control.html`, from a `file://` URL and from `http://localhost:63342`. The saved PDF is blank too
+(960 bytes, 1 Letter page, no text, 0 non-white pixels). So the bug is not headless-only. A DevTools `Page.printToPDF`
+in a headed window printed correctly, so the dialog path and that call differ.
 
-- The Chrome version (`chrome://version`) and macOS version.
-- The saved PDF from the dialog, opened and run through `pdftotext`: is it blank too, or only the preview?
-- The same test opened with a `file://` URL (the first test used `http://localhost:63342`).
-- The same test on an older Chrome. The headless window is 107 to 108; the dialog's window may differ.
-- Save the two dialog screenshots as `results/print-dialog-repro.png` and `results/print-dialog-control.png`.
+Still missing, to make the report complete:
+
+- The same test on older Chrome builds, to find where the dialog starts failing. The headless window is 107 to 108; the
+  dialog's window may differ. Use `tools/run-chrome.sh` (below), which does not touch your normal Chrome.
+- The same test on Windows and Linux.
+
+**Trying an older Chrome without touching your normal one**
+
+```sh
+tools/run-chrome.sh 127.0.6533.119     # a Chrome for Testing build, versions 113 and later
+tools/run-chrome.sh r1047731           # an older Chromium snapshot, by main-branch position (107 branch point)
+tools/run-chrome.sh r1058933           # 108 branch point
+```
+
+It downloads the build into `~/.cache/chrome-test-builds` (set `CHROME_BUILDS_DIR` to change it), opens it as a separate
+app with a new throwaway profile, and loads `repro.html` and `repro-control.html`. Your installed Chrome, its profile,
+its extensions and its default-browser setting are not used or changed. Delete the folder to remove the builds.
+Check the exact version in `chrome://version` and note it. Builds from some Chrome versions do not start on a given
+macOS (Chrome for Testing 120 crashed here); record that as "no data" and try a neighbouring version.
+
+Suggested order, to find the boundary quickly: 155 (known blank), 127.0.6533.119, 124.0.6367.207, 116.0.5845.96,
+then `r1058933`, `r1047731`, narrowing between the last blank and the first correct one.
 
 The steps, for repeating it on another system:
 
