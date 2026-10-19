@@ -95,7 +95,7 @@ On screen both pages are identical, and the `cqh` text is 22.88px (13% of the 17
 - **The print dialog is NOT affected on Windows.** Chrome 155.0.8059.84 (printer "Power PDF", preview shows `10.3.0`,
   `UNRELATED-INFLOW-TEXT`, `UNRELATED-ABS-TEXT`) and Microsoft Edge 155.0.4283.62 (Save as PDF; the same text and the red
   box), both from a `file://` URL. The Windows version was not recorded, and I did not save a PDF. On the same Windows PC, headless output is
-  blank for `repro.html` and has the text for `repro-control.html` (as reported; the command and PDF sizes were not recorded),
+  blank for `repro.html` and has the text for `repro-control.html` (HeadlessChrome/155, letter, 1 page, Skia/PDF m155; PDFs in `results/`. Header and footer were on, so `repro.html` gives 27,483 bytes with only the date, title, URL, and "1/1" and none of the body text; the control gives 48,710 bytes with all text),
   so the dialog and headless output differ on one machine with one build. Changing the paper size and the scale in the
   Windows dialog made no difference. The Windows CI runner is blank too. (`LayoutNGPrinting` does not appear in
   `chrome://flags`; it is a base feature, not a listed flag, so that is expected and is not evidence either way. Its kill
