@@ -31,8 +31,13 @@ install. The same build blanks in a Linux container. It is now the `cft-127` tar
 That result is why a control must be a build that is shown to print **on the same kind of machine**. On the Mac,
 Chromium 107 and 108 both print. In a Linux container, 107 prints and 108 is blank.
 
-The `pw-107` and `pw-108` targets, and the empty-page check, were added after run 38981978247 and
-**have not run on CI yet**.
+**Result of the corrected controls** (run 39264032665, all 28 jobs succeeded):
+
+- `pw-107` (Chromium 107.0.5304.18) **prints on all four runners**, with `repro` and `control` within 20 bytes
+  (Linux 10,604 / 10,619, Windows 21,681 / 21,701, macOS Intel and arm64 16,891 / 16,910). The harness works on every OS.
+- `pw-108` (Chromium 108.0.5359.29) is **BLANK on all four** (671 bytes, equal to the empty page).
+- The empty-page check passed on every row (under 3,000 bytes: 671 to 887).
+- `cft-127` is BLANK on all four again, consistent with the window being 107 to 108 on runners.
 
 ## 1. Matrix
 
@@ -45,6 +50,7 @@ The `pw-107` and `pw-108` targets, and the empty-page check, were added after ru
 | OS | macOS Intel (GitHub `macos-15-intel`, Darwin 24.6) x64 | done, CI | BLANK: Chrome 155.0.8059.85, Chrome beta 157.0.8103.6, Chromium 156.0.8078.4 (960, 960, 839 bytes; controls 15,654, 15,656, 15,533) |
 | OS | macOS Apple silicon (GitHub `macos-latest`, Darwin 25.6) arm64 | done, CI | BLANK on the same three browsers, same sizes as macOS Intel |
 | Platform dependence | Chrome for Testing 127.0.6533.119 headless shell on 4 GitHub runners, a Linux container, and a physical Mac | done | BLANK on the 4 runners and in the container; prints on the physical Mac. Cause unknown. |
+| CI version bracket, with control | Chromium 107.0.5304.18 (`pw-107`) and 108.0.5359.29 (`pw-108`) on ubuntu-latest, windows-latest, macos-latest, macos-15-intel | done, CI | 107 prints on all four; 108 BLANK on all four. This is the regression window on every runner. |
 | Factors that did **not** change the result | Linux container, Chromium 127: wait 1.5 s, two animation frames, `fonts.ready`, screenshot first, pdf twice, print media, viewport 800x600 / default / 390x844 mobile, device scale factor 2, `file://` URL instead of `setContent`, `LANG`, 1 CPU (`--cpus=1`). Mac, Chrome for Testing 127 shell: `--disable-gpu`, `--disable-software-rasterizer`, SwiftShader, `--enable-unsafe-swiftshader`, and 8 font families. | done | Linux stays BLANK; Mac stays correct |
 | Linux version scan (Docker Desktop, Ubuntu 22.04 arm64, Playwright's Chromium) | 107.0.5304.18 prints; 108.0.5359.29, 109, 110, 114, 117, 120, 123, 125, 127.0.6533.17, 128.0.6613.18 blank | done | the Linux regression is between 107 and 108 |
 | Regression range by position (old headless, Chromium snapshots, macOS arm64) | 1316017 good, 1318290 bad | done, partial | a range of about 2,300 positions. Builds near 1317170 to 1317188 printed nothing here, so it is not one commit. Finish it with `bisect-builds.py` on a machine where they run. |

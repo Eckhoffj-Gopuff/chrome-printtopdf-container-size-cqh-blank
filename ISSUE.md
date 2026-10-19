@@ -25,13 +25,18 @@ On screen both pages are identical, and the `cqh` text is 22.88px (13% of the 17
 
 ## Is it a regression? Does it work in other cases?
 
-- **Linux (Docker, Ubuntu 22.04, arm64; Playwright's bundled Chromium, `page.pdf`): regression between 107 and 108.**
-  Chromium 107.0.5304.18 prints correctly (11,765 bytes; control 11,779). Chromium 108.0.5359.29 is blank (671 bytes;
-  control 11,767), and so is every later build I ran: 109, 110, 114, 117, 120, 123, 125, 127.0.6533.17, 128.0.6613.18, 133.0.6943.16.
-- **The window depends on the machine.** Chrome for Testing 127.0.6533.119 headless shell prints correctly on my physical Mac
-  but is blank on GitHub-hosted Linux, Windows, macOS Intel, and macOS arm64 runners (847 bytes each; the controls print).
-  I do not know why. These did not change the result: CPU count, timing, viewport, device scale factor, locale, fonts, and
-  GPU-related flags. The Mac boundary below applies to one physical machine and may not apply elsewhere.
+- **Regression between Chromium 107 and 108, on Linux, Windows, and macOS.** Playwright's bundled Chromium, `page.pdf`,
+  on GitHub-hosted runners (Ubuntu x64, Windows 10.0.26100 x64, macOS 15 Intel, macOS arm64), public run
+  https://github.com/Eckhoffj-Gopuff/chrome-printtopdf-container-size-cqh-blank/actions/runs/39264032665 :
+  Chromium **107.0.5304.18 prints correctly** on all four (repro and control within 20 bytes of each other), and Chromium
+  **108.0.5359.29 is blank** on all four (671 bytes, the same as an empty page; the controls print 10,606 to 21,688 bytes).
+  The same holds in a Linux container (Ubuntu 22.04, arm64): 107 prints, 108 and every later build I ran are blank
+  (109, 110, 114, 117, 120, 123, 125, 127.0.6533.17, 128.0.6613.18, 133.0.6943.16). Chromium 107 on every runner is the
+  control that shows the test setup works. The commit range inside 107 to 108 is not narrowed yet.
+- **My physical Mac is the exception.** There, old headless prints correctly until Chrome 128 (below). Chrome for Testing
+  127.0.6533.119 headless shell prints on that Mac and is blank on the four runners and in the container. I do not know
+  why. These did not change the result: CPU count, timing, viewport, device scale factor, locale, fonts, and GPU-related
+  flags. The Mac boundary below applies to one physical machine and may not apply elsewhere.
 - **macOS 26 arm64, physical machine: regression in old headless and chrome-headless-shell between 127 and 128.**
   `--headless=old` prints correctly on 113.0.5672.63, 116.0.5845.96, 124.0.6367.207, and 127.0.6533.119. It is blank on
   128.0.6613.8 and 128.0.6613.84. chrome-headless-shell (Chrome for Testing) prints correctly on 127.0.6533.119 and is blank on
@@ -80,7 +85,8 @@ Every `Page.printToPDF` variant I tried is blank: default Letter, A4 landscape, 
 
 Chrome dev and canary, Edge, Safari, and printing from the browser UI (Ctrl+P). The Windows, Linux, and macOS
 runs above were headless only. Headed Chrome was tested only on macOS.
-The position bisect was run for old headless on macOS only. I did not bisect new headless.
+The commit range inside the 107 to 108 change is not narrowed (the position bisect I ran was on my physical Mac, for
+the Chrome 128 boundary there). I did not bisect new headless.
 
 ## Real-world impact
 

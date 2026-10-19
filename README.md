@@ -58,10 +58,25 @@ makes no difference (the CLI with and without `--disable-gpu` is blank).
 
 ## When it started
 
-**The version window depends on the machine.** The same Chrome for Testing 127.0.6533.119 headless shell prints
-`repro.html` correctly on my physical Mac and is blank on every GitHub-hosted runner (Linux, Windows, macOS Intel,
-macOS arm64) and in a Linux container. I do not know why. Not the cause (all tested, see `COVERAGE.md`): CPU count,
-timing, viewport, device scale factor, locale, page lifecycle, fonts, and GPU-related flags.
+**The regression is between Chromium 107 and 108 on every machine except my physical Mac.** On all four
+GitHub-hosted runners (Ubuntu x64, Windows x64, macOS 15 Intel, macOS arm64) Chromium 107.0.5304.18 prints
+`repro.html` correctly and Chromium 108.0.5359.29 prints it blank (run 39264032665, table below). The same holds in
+a Linux container. On my **physical Mac** old headless prints correctly until Chrome 128. I do not know why the Mac
+differs. Not the cause (all tested, see `COVERAGE.md`): CPU count, timing, viewport, device scale factor, locale,
+page lifecycle, fonts, and GPU-related flags.
+
+**GitHub-hosted runners, Playwright's bundled Chromium (`page.pdf`), run 39264032665:**
+
+| Runner | Chromium 107.0.5304.18 (known-good control) | Chromium 108.0.5359.29 | Empty page |
+|---|---|---|---|
+| Ubuntu x64 | **prints**: repro 10,604, control 10,619 | **blank**: repro 671, control 10,606 | 887 / 671 |
+| Windows x64 (10.0.26100) | **prints**: repro 21,681, control 21,701 | **blank**: repro 671, control 21,688 | 887 / 671 |
+| macOS 15 Intel | **prints**: repro 16,891, control 16,910 | **blank**: repro 671, control 16,897 | 887 / 671 |
+| macOS arm64 | **prints**: repro 16,891, control 16,910 | **blank**: repro 671, control 16,897 | 887 / 671 |
+
+A blank `repro.html` is 671 bytes, the same as an empty page in that build. The 107 control prints on every runner,
+so the harness works and the blank results are not a setup problem. Chrome for Testing 127.0.6533.119 headless shell is
+also blank on all four runners (847 bytes), as expected for a build after 108.
 
 The page text was shorter in the earlier runs than in the final `repro.html`; the unrelated text was moved only to
 stop overlaps. The result did not change on re-runs with the final file.
@@ -76,10 +91,6 @@ stop overlaps. The result did not change on re-runs with the final file.
 
 So on Linux the bug is in every build from Chromium 108 on, and Chromium 107 is the last good one I found. An empty
 page prints 666 to 887 bytes, and a blank `repro.html` is within 100 bytes of the empty page in the same build.
-
-**GitHub-hosted runners** (Ubuntu x64, Windows x64, macOS 15 Intel, macOS arm64; Chrome for Testing 127.0.6533.119
-headless shell): `repro.html` is blank on all four (847 bytes) while the control prints. A control build that prints
-on every runner is still needed; see `COVERAGE.md` ("Controls").
 
 **macOS 26 arm64, physical machine** (`Page.printToPDF` command line):
 
@@ -154,8 +165,10 @@ whether other ways of getting a definite height also trigger it.
 See `COVERAGE.md` for the full list and the steps. At the time of writing:
 
 - Chrome dev and canary channels (the dev install did not work on any CI runner), and Microsoft Edge.
-- Windows, Linux, and macOS were tested only in headless mode, only with the Playwright `chrome`, `chrome-beta`, and
-  `chromium` targets. Headed Chrome was tested only on macOS.
+- Windows, Linux, and macOS runners were tested only in headless mode, with Playwright's `chromium`, the `chrome` and
+  `chrome-beta` channels, Chrome for Testing 127, and Chromium 107 and 108. Headed Chrome was tested only on my Mac.
+- The exact commit range for the 107 to 108 change. It is one Chrome milestone, not yet a commit range, on any
+  platform. A position bisect on Linux is the next step.
 - Printing from the browser UI (Ctrl/Cmd+P). Headed `Page.printToPDF` is not affected.
 - Safari and other WebKit browsers.
 - Why it happens. This is a report of the behavior, not a diagnosis.
