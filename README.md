@@ -57,6 +57,7 @@ screenshot of the page as Chrome shows it.
 | Google Chrome 155.0.8059.84, headed, raw DevTools `Page.printToPDF` | macOS 26, arm64 | 16,886 bytes, all text (**not** blank) | 16,886 bytes |
 | **Google Chrome 155.0.8059.84, headed, print dialog (Ctrl/Cmd+P, Save as PDF, Letter, portrait)** | macOS 26.6.1 (25G76); opened from `http://localhost:63342` and from a `file://` URL, same result | **blank preview; the saved PDF is blank** (960 bytes, 1 Letter page, no text, 0 non-white pixels) | preview shows all the text |
 | **Google Chrome 155.0.8059.84, print dialog (Windows, version not recorded, `file://`)** | Windows | **text shown (not affected)** | not checked |
+| Google Chrome 155.0.8059.84, headless, same Windows PC (as reported; command and sizes not recorded) | Windows | blank | has text |
 | **Microsoft Edge 155.0.4283.62, print dialog (Save as PDF)** | Windows | **text shown (not affected)** | not checked |
 | Firefox 138.0.1, WebDriver `printPage` | macOS 26, arm64 | 12,624 bytes, all text | 12,625 bytes |
 | Safari 26.6 (21624.4.5.11.5), print dialog preview | macOS 26 | **all text shown (not affected)** | not checked |

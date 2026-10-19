@@ -94,9 +94,12 @@ On screen both pages are identical, and the `cqh` text is 22.88px (13% of the 17
   not know why.
 - **The print dialog is NOT affected on Windows.** Chrome 155.0.8059.84 (printer "Power PDF", preview shows `10.3.0`,
   `UNRELATED-INFLOW-TEXT`, `UNRELATED-ABS-TEXT`) and Microsoft Edge 155.0.4283.62 (Save as PDF; the same text and the red
-  box), both from a `file://` URL. The Windows version was not recorded, and I did not save a PDF. The Windows CI runner
-  (headless `page.pdf`) is blank, so on Windows the dialog and headless output differ, as on macOS the dialog and a headed
-  DevTools call differ. Screenshots: `results/print-dialog-windows-*`.
+  box), both from a `file://` URL. The Windows version was not recorded, and I did not save a PDF. On the same Windows PC, headless output is
+  blank for `repro.html` and has the text for `repro-control.html` (as reported; the command and PDF sizes were not recorded),
+  so the dialog and headless output differ on one machine with one build. Changing the paper size and the scale in the
+  Windows dialog made no difference. The Windows CI runner is blank too. (`LayoutNGPrinting` does not appear in
+  `chrome://flags`; it is a base feature, not a listed flag, so that is expected and is not evidence either way. Its kill
+  switch already has no effect from Chromium 114.) Screenshots: `results/print-dialog-windows-*`.
 - **The print dialog has the same version boundary on Linux.** Headed Chromium on a virtual display in Docker (Ubuntu 22.04
   arm64, Ctrl+P, destination Save as PDF; `tools/dialog-linux.sh`; screenshots in `results/linux-dialog/`): for
   `repro.html`, Chromium **107.0.5304.18 shows the text** (the `10.3.0` is much larger than on screen, so `cqh` did not
