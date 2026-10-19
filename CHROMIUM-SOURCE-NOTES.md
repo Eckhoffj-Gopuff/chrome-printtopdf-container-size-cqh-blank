@@ -26,9 +26,10 @@ Facts come from the commit diffs linked below. Items marked **hypothesis** are n
 - The defect is not in a regression of working code. It is in a code path that was never used for container queries
   in print before 108, so it was probably never exercised in the field. Frame the issue as "container query units in
   NG print layout", not "something broke in 108".
-- `--enable-blink-features=LayoutNGPrinting` on 107 did not reproduce it. A reason (**hypothesis**): the feature depends
-  on `LayoutNG`, `LayoutNGBlockFragmentation`, and `LayoutNGView`, and a runtime feature with `depends_on` is off if a
-  dependency is off. Test: 107 with all four names in `--enable-blink-features=`.
+- `--enable-blink-features=LayoutNGPrinting` alone on 107 did not reproduce it because the feature depends on `LayoutNG`,
+  `LayoutNGBlockFragmentation`, and `LayoutNGView`. **Tested 2026-10-19: with all four names, Chromium 107.0.5304.18 is
+  blank (887 bytes; the control prints 11,779), and with any three it prints.** So the defect is in the LayoutNG print
+  path and was already in 107 behind the flags. See `tools/flags-107.cjs`.
 
 ## Hypotheses to test (in order)
 

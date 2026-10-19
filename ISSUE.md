@@ -65,8 +65,13 @@ On screen both pages are identical, and the `cqh` text is 22.88px (13% of the 17
   115.0.5790.75 (672), 117.0.5938.62 (666), 120.0.6099.28 (666), 123.0.6312.4 (847), 125.0.6422.26 (847),
   127.0.6533.17 (847), or 128.0.6613.18 (847): all still blank. So the kill switch works on 108 to 113 and not from
   114 on (111 was not tested). I did not find the defect itself.
-  `--enable-blink-features=LayoutNGPrinting` on Chromium 107 did **not** reproduce it (11,765 bytes), so turning that
-  feature on is not the whole change.
+  `--enable-blink-features=LayoutNGPrinting` alone on Chromium 107 does not reproduce it (11,765 bytes), because the
+  feature depends on three others. With all four, **Chromium 107.0.5304.18 is blank**:
+  `--enable-blink-features=LayoutNGPrinting,LayoutNG,LayoutNGBlockFragmentation,LayoutNGView` gives 887 bytes (an empty
+  page in that build), and `repro-control.html` with the same flags prints (11,779). Leaving out any one of
+  `LayoutNG`, `LayoutNGBlockFragmentation`, `LayoutNGView` still prints (`tools/flags-107.cjs`). So the defect is in the
+  LayoutNG print path, not in anything else that changed in 108. Before this path was enabled, Chromium did not evaluate
+  container queries at all while printing (`Element::ComputeContainerQueryEvaluator` returned null for a printing document).
 - **My physical Mac is the exception.** There, old headless prints correctly until Chrome 128 (below). Chrome for Testing
   127.0.6533.119 headless shell prints on that Mac and is blank on the four runners and in the container. I do not know
   why. These did not change the result: CPU count, timing, viewport, device scale factor, locale, fonts, and GPU-related

@@ -128,7 +128,7 @@ that the two ends behave as expected, then bisects (it took about 90 seconds).
 The change in the bisect range is `06876550989f` "Set the LayoutNGPrinting feature to 'stable'." (Bug: 1121942, commit position
 #1053686). It turns the existing LayoutNG print code on by default and adds a base feature as a kill switch. So the blank comes
 from the LayoutNG print layout that became the default in Chrome 108. The kill switch works on 108 to 112 and has no effect by
-114 (113 prints with it: 11,570 against 671 by default; 115, 117, 120, 123, 125, and 128 are blank with or without it). Turning the feature on in 107, by either switch, did not reproduce it, so it may depend on other changes.
+114 (113 prints with it: 11,570 against 671 by default; 115, 117, 120, 123, 125, and 128 are blank with or without it). Turning only `LayoutNGPrinting` on in 107 does not reproduce it, because it depends on `LayoutNG`, `LayoutNGBlockFragmentation`, and `LayoutNGView`. With all four on, 107 is blank too (887 bytes; the control prints), so the cause is the LayoutNG print path itself. See `CHROMIUM-SOURCE-NOTES.md`.
 I did not diagnose the defect. On my physical Mac, Chromium 108 prints under every setting of this flag, which I cannot explain.
 
 **What the print layout trips over** (Linux container; identical results on Chromium 108.0.5359.29 and 156.0.8078.4; headless
